@@ -1,0 +1,101 @@
+# SMSHUB module — French translations
+
+ModuleSMSHubName=SMSHUB
+ModuleSMSHubDesc=Passerelle SMS via routeurs 4G locaux (SMSHUB)
+
+SmsHubSetup=Configuration SMSHUB
+SmsHubDashboard=Tableau de bord SMSHUB
+SmsHubServerUrl=URL du serveur SMSHUB
+SmsHubServerUrlHelp=Ex : https://smshub.siliteo.com/SERVER
+SmsHubApiKey=Clé API (X-Api-Key)
+SmsHubApiKeyHelp=Clé fournie dans le dashboard SMSHUB → Paramètres → Clés API.
+SmsHubDefaultCountryCode=Indicatif pays par défaut
+SmsHubDefaultCountryCodeHelp=Préfixe automatiquement ajouté aux numéros locaux. Ex : +33
+SmsHubSenderName=Nom expéditeur (informatif)
+SmsHubDryRun=Mode test (sans envoi réel)
+SmsHubDryRunHelp=Coche cette case pour tracer les SMS dans le journal sans réellement les envoyer.
+SmsHubTestConnection=Tester la connexion
+SmsHubConnectionOk=Connexion au serveur SMSHUB réussie (version %s).
+SmsHubConnectionKo=Échec de la connexion : %s
+
+SmsHubTriggers=Déclencheurs automatiques
+SmsHubEnableBillValidate=Envoyer un SMS à la validation d'une facture
+SmsHubEnableBillPayed=Envoyer un SMS à l'enregistrement du paiement
+SmsHubEnableTicketCreate=Envoyer un SMS à la création d'un ticket
+SmsHubEnableTicketModify=Envoyer un SMS à chaque modification de ticket
+SmsHubEnableTicketClose=Envoyer un SMS à la clôture d'un ticket
+SmsHubEnableRelances=Activer les relances automatiques des factures impayées
+
+SmsHubTemplates=Modèles SMS
+SmsHubTemplate=Modèle SMS
+SmsHubTemplateCode=Code
+SmsHubTemplateLabel=Libellé
+SmsHubTemplateContent=Contenu
+SmsHubTemplateContext=Contexte
+SmsHubTemplateActive=Actif
+SmsHubTemplateNew=Nouveau modèle
+SmsHubTemplateAvailableVars=Variables disponibles
+SmsHubTemplateVarHelp=Utilisez {variable} dans le contenu. Les variables sont remplacées à l'envoi.
+
+SmsHubRelances=Relances impayés
+SmsHubRelancePalier=Palier
+SmsHubRelanceDays=Jours après échéance
+SmsHubRelanceTemplate=Modèle SMS
+SmsHubRelanceMinAmount=Montant minimum TTC
+SmsHubRelanceAddStep=Ajouter un palier
+SmsHubRelanceStopFor=Stopper les relances pour cette facture
+SmsHubRelanceStopReason=Motif d'arrêt
+
+SmsHubLog=Journal des envois
+SmsHubLogDate=Date
+SmsHubLogPhone=Destinataire
+SmsHubLogMessage=Message
+SmsHubLogStatus=Statut
+SmsHubLogSource=Source
+SmsHubLogError=Erreur
+SmsHubLogTaskId=Task ID SMSHUB
+
+SmsHubSend=Envoi rapide
+SmsHubSendPhone=Numéro destinataire
+SmsHubSendMessage=Message
+SmsHubSendScheduledAt=Envoi programmé (optionnel)
+SmsHubSendScheduledAtHelp=Vide = envoi immédiat. Formats : 2026-12-25T10:30:00, +15m, +2h, +1d
+SmsHubSendUseTemplate=Utiliser un modèle
+SmsHubSendButton=Envoyer le SMS
+SmsHubSendSuccess=SMS mis en file avec succès (task #%s).
+SmsHubSendError=Erreur : %s
+
+SmsHubStatusPending=En file
+SmsHubStatusSent=Envoyé
+SmsHubStatusFailed=Échec
+SmsHubStatusScheduled=Programmé
+SmsHubStatusDryrun=Test (non envoyé)
+
+SmsHubSourceManual=Manuel
+SmsHubSourceBill=Facture
+SmsHubSourceTicket=Ticket
+SmsHubSourceRelance=Relance auto
+SmsHubSourceCron=Cron
+
+SmsHubCardSendSms=Envoyer un SMS au client
+
+SmsHubVarClientName=Nom du client
+SmsHubVarRef=Référence document
+SmsHubVarAmount=Montant TTC
+SmsHubVarDueDate=Date d'échéance
+SmsHubVarPaymentLink=Lien de paiement en ligne
+SmsHubVarCompany=Nom de notre société
+SmsHubVarTicketRef=Référence ticket
+SmsHubVarTicketSubject=Sujet ticket
+SmsHubVarTicketStatus=Statut ticket
+SmsHubVarTechnician=Nom du technicien assigné
+
+SmsHubUpdateCheck=Vérifier les mises à jour
+SmsHubUpdateCurrentVersion=Version installée
+SmsHubUpdateLatestVersion=Version disponible
+SmsHubUpdateUpToDate=Vous utilisez la dernière version.
+SmsHubUpdateAvailable=Une mise à jour est disponible.
+SmsHubUpdateInstall=Installer la mise à jour
+SmsHubUpdateInProgress=Mise à jour en cours…
+SmsHubUpdateDone=Mise à jour terminée. Veuillez recharger la page.
+SmsHubUpdateError=Erreur de mise à jour : %s
