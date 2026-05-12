@@ -127,6 +127,44 @@ class SmsHubSender
 	}
 
 	/**
+	 * Build the standard variable map for a commercial proposal (devis).
+	 *
+	 * @param Propal $propal
+	 * @return array
+	 */
+	public static function buildPropalVars($propal)
+	{
+		global $conf, $langs, $mysoc;
+		if (empty($propal->thirdparty)) $propal->fetch_thirdparty();
+
+		// Online signature link if module available
+		$signature_link = '';
+		$onlineSignFile = DOL_DOCUMENT_ROOT.'/core/lib/signature.lib.php';
+		if (file_exists($onlineSignFile)) {
+			require_once $onlineSignFile;
+			if (function_exists('getOnlineSignatureUrl')) {
+				$signature_link = getOnlineSignatureUrl(0, 'proposal', $propal->ref);
+			}
+		}
+
+		$valid_until = !empty($propal->fin_validite) ? $propal->fin_validite : 0;
+		$today = dol_now();
+		$days_remaining = $valid_until ? max(0, (int) floor(($valid_until - $today) / 86400)) : 0;
+
+		return array(
+			'client_name' => $propal->thirdparty ? $propal->thirdparty->name : '',
+			'company_name' => $mysoc->name ?? '',
+			'ref' => $propal->ref,
+			'amount' => price($propal->total_ttc, 0, $langs, 1, -1, -1, $conf->currency ?? 'EUR'),
+			'amount_ht' => price($propal->total_ht, 0, $langs, 1, -1, -1, $conf->currency ?? 'EUR'),
+			'valid_until' => $valid_until ? dol_print_date($valid_until, 'day') : '',
+			'days_remaining' => $days_remaining,
+			'signature_link' => $signature_link,
+			'date' => dol_print_date($today, 'day'),
+		);
+	}
+
+	/**
 	 * Build the standard variable map for a ticket.
 	 */
 	public static function buildTicketVars($ticket)

@@ -50,8 +50,35 @@ class InterfaceSmsHubTriggers extends DolibarrTriggers
 			case 'TICKET_ASSIGN':
 				if (!getDolGlobalString('SMSHUB_ENABLE_TICKET_ASSIGN')) return 0;
 				return $this->fireTicketTech($sender, $object, 'ticket_assigned_tech');
+
+			case 'PROPAL_VALIDATE':
+				if (!getDolGlobalString('SMSHUB_ENABLE_PROPAL_VALIDATE')) return 0;
+				return $this->firePropal($sender, $object, 'propal_validated');
+
+			case 'PROPAL_SENTBYMAIL':
+				if (!getDolGlobalString('SMSHUB_ENABLE_PROPAL_SENT')) return 0;
+				return $this->firePropal($sender, $object, 'propal_sent');
+
+			case 'PROPAL_CLOSE_SIGNED':
+				if (!getDolGlobalString('SMSHUB_ENABLE_PROPAL_SIGNED')) return 0;
+				return $this->firePropal($sender, $object, 'propal_signed');
+
+			case 'PROPAL_CLOSE_REFUSED':
+				if (!getDolGlobalString('SMSHUB_ENABLE_PROPAL_REFUSED')) return 0;
+				return $this->firePropal($sender, $object, 'propal_refused');
 		}
 		return 0;
+	}
+
+	protected function firePropal($sender, $propal, $template_code)
+	{
+		if (empty($propal->id)) return 0;
+		if (empty($propal->thirdparty)) $propal->fetch_thirdparty();
+		$phone = SmsHubSender::thirdpartyPhone($propal->thirdparty);
+		if (empty($phone)) return 0;
+		$vars = SmsHubSender::buildPropalVars($propal);
+		$ok = $sender->sendFromTemplate($template_code, $phone, $vars, 'propal', $propal->id);
+		return $ok ? 1 : 0;
 	}
 
 	protected function fireBill($sender, $facture, $template_code)

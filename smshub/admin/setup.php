@@ -34,7 +34,11 @@ $bool_constants = array(
 	'SMSHUB_ENABLE_TICKET_MODIFY',
 	'SMSHUB_ENABLE_TICKET_CLOSE',
 	'SMSHUB_ENABLE_TICKET_ASSIGN',
-	'SMSHUB_ENABLE_RELANCES',
+	'SMSHUB_ENABLE_PROPAL_VALIDATE',
+	'SMSHUB_ENABLE_PROPAL_SENT',
+	'SMSHUB_ENABLE_PROPAL_SIGNED',
+	'SMSHUB_ENABLE_PROPAL_REFUSED',
+	'SMSHUB_BRIDGE_PUBLIC',
 	'SMSHUB_DRYRUN',
 );
 
@@ -115,7 +119,11 @@ $triggers_labels = array(
 	'SMSHUB_ENABLE_TICKET_MODIFY' => $langs->trans("SmsHubEnableTicketModify"),
 	'SMSHUB_ENABLE_TICKET_CLOSE' => $langs->trans("SmsHubEnableTicketClose"),
 	'SMSHUB_ENABLE_TICKET_ASSIGN' => 'Notifier le technicien assigné',
-	'SMSHUB_ENABLE_RELANCES' => $langs->trans("SmsHubEnableRelances"),
+	'SMSHUB_ENABLE_PROPAL_VALIDATE' => 'SMS à la validation d\'un devis',
+	'SMSHUB_ENABLE_PROPAL_SENT' => 'SMS quand un devis est envoyé par mail',
+	'SMSHUB_ENABLE_PROPAL_SIGNED' => 'SMS à la signature d\'un devis',
+	'SMSHUB_ENABLE_PROPAL_REFUSED' => 'SMS au refus d\'un devis',
+	'SMSHUB_BRIDGE_PUBLIC' => 'Exposer le bridge SMS aux autres modules (RelanceAuto, etc.)',
 );
 foreach ($triggers_labels as $cst => $label) {
 	print '<tr class="oddeven"><td>'.$label.'</td><td>';

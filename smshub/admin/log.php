@@ -39,7 +39,7 @@ foreach (array('sent','scheduled','pending','failed','dryrun') as $s) {
 }
 print '</select> &nbsp; ';
 print 'Source : <select name="filter_source"><option value="">Toutes</option>';
-foreach (array('manual','bill','ticket','relance','cron') as $s) {
+foreach (array('manual','bill','ticket','propal','relance','cron') as $s) {
 	print '<option value="'.$s.'"'.($filter_source === $s ? ' selected' : '').'>'.$s.'</option>';
 }
 print '</select> &nbsp; ';

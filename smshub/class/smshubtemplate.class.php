@@ -151,6 +151,15 @@ class SmsHubTemplate
 					'ticket_status' => 'Statut ticket',
 					'technician' => 'Nom du technicien assigné',
 				));
+			case 'propal':
+				return array_merge($base, array(
+					'ref' => 'Référence devis',
+					'amount' => 'Montant TTC',
+					'amount_ht' => 'Montant HT',
+					'valid_until' => 'Date de fin de validité',
+					'days_remaining' => 'Jours restants avant expiration',
+					'signature_link' => 'Lien signature en ligne',
+				));
 			case 'manual':
 			default:
 				return $base;

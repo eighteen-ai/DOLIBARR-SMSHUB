@@ -1,6 +1,6 @@
 # DOLIBARR-SMSHUB
 
-Module **Dolibarr 18+** (testé sur 23) intégrant la passerelle SMSHUB : envoi de SMS via routeurs 4G locaux (Huawei / Cudy / Capcom6), notifications automatiques sur factures et tickets, workflow de relances impayés multi-paliers, modèles SMS avec variables dynamiques.
+Module **Dolibarr 18+** (testé sur 23) intégrant la passerelle SMSHUB : envoi de SMS via routeurs 4G locaux (Huawei / Cudy / Capcom6), notifications automatiques sur factures, devis et tickets, modèles SMS avec variables dynamiques, et **bridge** permettant à d'autres modules (RelanceAuto…) d'utiliser SMSHUB comme transport SMS.
 
 Service SMSHUB : <https://smshub.siliteo.com>
 
@@ -9,13 +9,25 @@ Service SMSHUB : <https://smshub.siliteo.com>
 | Domaine | Apport SMSHUB |
 |---|---|
 | **Factures** | SMS automatique à la validation, à l'enregistrement du paiement, lien court vers paiement en ligne |
-| **Relances impayés** | Workflow multi-paliers configurable (J+1, J+7, J+15, J+30…) avec cron quotidien, traçabilité dans `actioncomm`, possibilité de stopper les relances par facture |
+| **Devis (propositions commerciales)** | SMS à la validation, à l'envoi par mail, à la signature / au refus, lien signature en ligne |
 | **Tickets** | SMS au client à la création / modification / clôture, notification du technicien assigné |
-| **Templates** | Modèles SMS avec variables dynamiques `{client_name}`, `{ref}`, `{amount}`, `{due_date}`, `{payment_link}`, `{ticket_ref}`, `{technician}`… |
-| **Envoi manuel** | Page "Envoi rapide" + bouton "📱 SMS via SMSHUB" injecté sur cartes facture/ticket/tiers |
+| **Templates** | Modèles SMS avec variables dynamiques `{client_name}`, `{ref}`, `{amount}`, `{due_date}`, `{payment_link}`, `{signature_link}`, `{ticket_ref}`, `{technician}`… |
+| **Envoi manuel** | Page "Envoi rapide" + bouton "📱 SMS via SMSHUB" injecté sur cartes facture/devis/ticket/tiers |
 | **Programmation** | Envoi différé via le paramètre natif SMSHUB `scheduled_at` (`+15m`, `+2h`, ISO 8601…) |
 | **Journal** | Toutes les tentatives loguées (envoyé / programmé / échoué / dryrun) avec filtres |
 | **Dry-run** | Mode test pour valider la config sans envoi réel |
+| **Bridge inter-modules** | `SmsHubBridge::send($phone, $body, $source, $fk)` exposé aux autres modules custom (RelanceAuto utilise ce bridge automatiquement quand SMSHUB est actif) |
+
+## ⚠️ Relances clients impayés
+
+**Cette fonctionnalité n'est pas couverte par SMSHUB.** Elle est déléguée au module dédié [`DOLIBARR-RELANCEAUTO`](https://github.com/eighteen-ai/DOLIBARR-RELANCEAUTO) qui :
+- s'appuie sur le cron natif Dolibarr de relances
+- gère le multi-canal (email + SMS + courrier postal PDF)
+- regroupe les factures par client (un seul envoi pour N factures impayées)
+- gère les promesses de paiement (gel des relances)
+- injecte les méthodes de paiement (RIB, SumUp, chèque) dans les templates
+
+Quand SMSHUB et RelanceAuto sont tous deux activés, RelanceAuto route automatiquement ses SMS via SMSHUB.
 
 ## Installation
 

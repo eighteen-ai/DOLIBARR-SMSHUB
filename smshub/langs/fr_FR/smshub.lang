@@ -24,7 +24,6 @@ SmsHubEnableBillPayed=Envoyer un SMS à l'enregistrement du paiement
 SmsHubEnableTicketCreate=Envoyer un SMS à la création d'un ticket
 SmsHubEnableTicketModify=Envoyer un SMS à chaque modification de ticket
 SmsHubEnableTicketClose=Envoyer un SMS à la clôture d'un ticket
-SmsHubEnableRelances=Activer les relances automatiques des factures impayées
 
 SmsHubTemplates=Modèles SMS
 SmsHubTemplate=Modèle SMS
@@ -36,15 +35,6 @@ SmsHubTemplateActive=Actif
 SmsHubTemplateNew=Nouveau modèle
 SmsHubTemplateAvailableVars=Variables disponibles
 SmsHubTemplateVarHelp=Utilisez {variable} dans le contenu. Les variables sont remplacées à l'envoi.
-
-SmsHubRelances=Relances impayés
-SmsHubRelancePalier=Palier
-SmsHubRelanceDays=Jours après échéance
-SmsHubRelanceTemplate=Modèle SMS
-SmsHubRelanceMinAmount=Montant minimum TTC
-SmsHubRelanceAddStep=Ajouter un palier
-SmsHubRelanceStopFor=Stopper les relances pour cette facture
-SmsHubRelanceStopReason=Motif d'arrêt
 
 SmsHubLog=Journal des envois
 SmsHubLogDate=Date

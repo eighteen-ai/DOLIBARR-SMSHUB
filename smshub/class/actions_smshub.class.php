@@ -24,7 +24,7 @@ class ActionsSmshub
 		if (!$user->hasRight('smshub', 'send')) return 0;
 
 		$ctx = $parameters['context'] ?? '';
-		$wanted = array('invoicecard', 'ticketcard', 'thirdpartycard');
+		$wanted = array('invoicecard', 'ticketcard', 'thirdpartycard', 'propalcard');
 		if (!array_intersect(explode(':', $ctx), $wanted)) return 0;
 
 		$socid = 0;
@@ -36,6 +36,7 @@ class ActionsSmshub
 
 		if (strpos($ctx, 'invoicecard') !== false) $prefill_template = 'bill_validated';
 		if (strpos($ctx, 'ticketcard') !== false) $prefill_template = 'ticket_modified';
+		if (strpos($ctx, 'propalcard') !== false) $prefill_template = 'propal_sent';
 
 		if (!empty($object->thirdparty)) {
 			require_once DOL_DOCUMENT_ROOT.'/custom/smshub/class/smshubsender.class.php';
@@ -62,6 +63,7 @@ class ActionsSmshub
 		$source_map = array(
 			'invoicecard' => 'bill',
 			'ticketcard' => 'ticket',
+			'propalcard' => 'propal',
 		);
 		$source = null;
 		foreach ($source_map as $k => $v) if (strpos($ctx, $k) !== false) { $source = $v; break; }

@@ -66,7 +66,7 @@ if ($action === 'new' || $action === 'edit') {
 
 	print '<tr class="oddeven"><td>'.$langs->trans("SmsHubTemplateContext").'</td><td>';
 	print '<select name="context">';
-	foreach (array('manual' => 'Manuel', 'bill' => 'Facture', 'ticket' => 'Ticket', 'relance' => 'Relance', 'order' => 'Commande', 'propal' => 'Devis') as $c => $l) {
+	foreach (array('manual' => 'Manuel', 'bill' => 'Facture', 'ticket' => 'Ticket', 'propal' => 'Devis (proposition commerciale)', 'relance' => 'Relance', 'order' => 'Commande') as $c => $l) {
 		print '<option value="'.$c.'"'.($tpl->context === $c ? ' selected' : '').'>'.$l.'</option>';
 	}
 	print '</select></td></tr>';

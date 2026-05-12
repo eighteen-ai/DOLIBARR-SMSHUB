@@ -24,13 +24,13 @@ class modSMSHub extends DolibarrModules
 		$this->descriptionlong = "Intègre SMSHUB (https://smshub.siliteo.com) à Dolibarr. Driver SMS natif compatible avec le module SMS standard, plus automatisations avancées : relances clients par paliers, notifications création/paiement de factures, alertes tickets, modèles SMS avec variables dynamiques.";
 		$this->editor_name = 'SMSHUB';
 		$this->editor_url = 'https://smshub.siliteo.com';
-		$this->version = '1.0.0';
+		$this->version = '1.1.0';
 		$this->const_name = 'MAIN_MODULE_'.strtoupper($this->name);
 		$this->picto = 'phoning';
 
 		$this->module_parts = array(
 			'triggers' => 1,
-			'hooks' => array('hookcontext' => array('invoicecard', 'ticketcard', 'thirdpartycard')),
+			'hooks' => array('hookcontext' => array('invoicecard', 'ticketcard', 'thirdpartycard', 'propalcard')),
 			'models' => 0,
 		);
 
@@ -56,8 +56,12 @@ class modSMSHub extends DolibarrModules
 			6 => array('SMSHUB_ENABLE_TICKET_CREATE', 'chaine', '1', 'SMS à la création ticket', 0, 'current', 0),
 			7 => array('SMSHUB_ENABLE_TICKET_MODIFY', 'chaine', '0', 'SMS à chaque modif ticket', 0, 'current', 0),
 			8 => array('SMSHUB_ENABLE_TICKET_CLOSE', 'chaine', '1', 'SMS à la clôture ticket', 0, 'current', 0),
-			9 => array('SMSHUB_ENABLE_RELANCES', 'chaine', '1', 'Relances automatiques impayés', 0, 'current', 0),
-			10 => array('SMSHUB_DRYRUN', 'chaine', '0', 'Mode test : pas d\'envoi réel', 0, 'current', 0),
+			9 => array('SMSHUB_DRYRUN', 'chaine', '0', 'Mode test : pas d\'envoi réel', 0, 'current', 0),
+			10 => array('SMSHUB_ENABLE_PROPAL_VALIDATE', 'chaine', '0', 'SMS à la validation d\'un devis', 0, 'current', 0),
+			11 => array('SMSHUB_ENABLE_PROPAL_SENT', 'chaine', '1', 'SMS quand un devis est envoyé par mail', 0, 'current', 0),
+			12 => array('SMSHUB_ENABLE_PROPAL_SIGNED', 'chaine', '1', 'SMS à la signature d\'un devis', 0, 'current', 0),
+			13 => array('SMSHUB_ENABLE_PROPAL_REFUSED', 'chaine', '0', 'SMS au refus d\'un devis', 0, 'current', 0),
+			14 => array('SMSHUB_BRIDGE_PUBLIC', 'chaine', '1', 'Exposer le bridge SMSHUB aux autres modules (ex : RelanceAuto)', 0, 'current', 0),
 		);
 
 		// Boxes / Widgets
@@ -74,7 +78,7 @@ class modSMSHub extends DolibarrModules
 		$r++;
 
 		$this->rights[$r][0] = 500202;
-		$this->rights[$r][1] = 'Administrer SMSHUB (templates, config, relances)';
+		$this->rights[$r][1] = 'Administrer SMSHUB (templates, config)';
 		$this->rights[$r][3] = 0;
 		$this->rights[$r][4] = 'admin';
 		$r++;
@@ -156,22 +160,6 @@ class modSMSHub extends DolibarrModules
 		$this->menu[$r] = array(
 			'fk_menu' => 'fk_mainmenu=smshub',
 			'type' => 'left',
-			'titre' => 'Relances impayés',
-			'mainmenu' => 'smshub',
-			'leftmenu' => 'smshub_relances',
-			'url' => '/custom/smshub/admin/relances.php',
-			'langs' => 'smshub@smshub',
-			'position' => 400,
-			'enabled' => '$conf->smshub->enabled',
-			'perms' => '$user->hasRight("smshub","admin")',
-			'target' => '',
-			'user' => 2,
-		);
-		$r++;
-
-		$this->menu[$r] = array(
-			'fk_menu' => 'fk_mainmenu=smshub',
-			'type' => 'left',
 			'titre' => 'Journal',
 			'mainmenu' => 'smshub',
 			'leftmenu' => 'smshub_log',
@@ -201,23 +189,8 @@ class modSMSHub extends DolibarrModules
 		);
 		$r++;
 
-		// Cron jobs
-		$this->cronjobs = array(
-			0 => array(
-				'label' => 'SMSHUB - Relances factures impayées',
-				'jobtype' => 'method',
-				'class' => '/custom/smshub/class/smshubrelance.class.php',
-				'objectname' => 'SmsHubRelance',
-				'method' => 'runDailyReminders',
-				'parameters' => '',
-				'comment' => 'Scanne quotidiennement les factures impayées et envoie les SMS de relance selon les paliers configurés.',
-				'frequency' => 1,
-				'unitfrequency' => 86400,
-				'status' => 1,
-				'test' => '$conf->smshub->enabled',
-				'priority' => 50,
-			),
-		);
+		// Cron jobs : aucun (les relances sont gérées par le module RelanceAuto)
+		$this->cronjobs = array();
 	}
 
 	public function init($options = '')
