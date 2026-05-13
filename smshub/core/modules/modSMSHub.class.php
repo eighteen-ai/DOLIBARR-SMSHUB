@@ -24,7 +24,7 @@ class modSMSHub extends DolibarrModules
 		$this->descriptionlong = "Intègre SMSHUB (https://smshub.siliteo.com) à Dolibarr. Driver SMS natif compatible avec le module SMS standard, plus automatisations avancées : relances clients par paliers, notifications création/paiement de factures, alertes tickets, modèles SMS avec variables dynamiques.";
 		$this->editor_name = 'SMSHUB';
 		$this->editor_url = 'https://smshub.siliteo.com';
-		$this->version = '1.1.0';
+		$this->version = '1.1.1';
 		$this->const_name = 'MAIN_MODULE_'.strtoupper($this->name);
 		$this->picto = 'phoning';
 
@@ -103,7 +103,7 @@ class modSMSHub extends DolibarrModules
 			'langs' => 'smshub@smshub',
 			'position' => 200,
 			'enabled' => '$conf->smshub->enabled',
-			'perms' => '$user->hasRight("smshub","read")',
+			'perms' => '$user->admin || $user->hasRight("smshub","read")',
 			'target' => '',
 			'user' => 2,
 		);
@@ -119,7 +119,7 @@ class modSMSHub extends DolibarrModules
 			'langs' => 'smshub@smshub',
 			'position' => 100,
 			'enabled' => '$conf->smshub->enabled',
-			'perms' => '$user->hasRight("smshub","read")',
+			'perms' => '$user->admin || $user->hasRight("smshub","read")',
 			'target' => '',
 			'user' => 2,
 		);
@@ -135,7 +135,7 @@ class modSMSHub extends DolibarrModules
 			'langs' => 'smshub@smshub',
 			'position' => 200,
 			'enabled' => '$conf->smshub->enabled',
-			'perms' => '$user->hasRight("smshub","send")',
+			'perms' => '$user->admin || $user->hasRight("smshub","send")',
 			'target' => '',
 			'user' => 2,
 		);
@@ -151,7 +151,7 @@ class modSMSHub extends DolibarrModules
 			'langs' => 'smshub@smshub',
 			'position' => 300,
 			'enabled' => '$conf->smshub->enabled',
-			'perms' => '$user->hasRight("smshub","admin")',
+			'perms' => '$user->admin || $user->hasRight("smshub","admin")',
 			'target' => '',
 			'user' => 2,
 		);
@@ -167,7 +167,7 @@ class modSMSHub extends DolibarrModules
 			'langs' => 'smshub@smshub',
 			'position' => 500,
 			'enabled' => '$conf->smshub->enabled',
-			'perms' => '$user->hasRight("smshub","read")',
+			'perms' => '$user->admin || $user->hasRight("smshub","read")',
 			'target' => '',
 			'user' => 2,
 		);
@@ -183,7 +183,7 @@ class modSMSHub extends DolibarrModules
 			'langs' => 'smshub@smshub',
 			'position' => 900,
 			'enabled' => '$conf->smshub->enabled',
-			'perms' => '$user->hasRight("smshub","admin")',
+			'perms' => '$user->admin || $user->hasRight("smshub","admin")',
 			'target' => '',
 			'user' => 2,
 		);

@@ -14,7 +14,7 @@ require_once DOL_DOCUMENT_ROOT.'/custom/smshub/class/smshubsender.class.php';
 require_once DOL_DOCUMENT_ROOT.'/custom/smshub/class/smshubtemplate.class.php';
 require_once DOL_DOCUMENT_ROOT.'/custom/smshub/lib/smshub.lib.php';
 
-if (!$user->hasRight('smshub', 'send')) accessforbidden();
+if (!$user->admin && !$user->hasRight('smshub', 'send')) accessforbidden();
 
 $langs->loadLangs(array("admin", "smshub@smshub"));
 

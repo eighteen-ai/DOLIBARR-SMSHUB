@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.1 — 2026-05-13
+
+- Fix: admin users were denied access to module pages (templates, send, log, dashboard) even when their account is flagged as Dolibarr admin. All page-level checks and menu visibility rules now accept `$user->admin` as a bypass alongside `hasRight()`. Matches the convention of sibling modules (dolisirene, sumup). Menu items refresh on module deactivate/reactivate; page checks apply immediately on auto-update.
+
 ## 1.1.0 — 2026-05-12
 
 - Add support for commercial proposals (devis) — triggers `PROPAL_VALIDATE`, `PROPAL_SENTBYMAIL`, `PROPAL_CLOSE_SIGNED`, `PROPAL_CLOSE_REFUSED`; 4 default templates; `propalcard` added to hook contexts (button + history panel on proposal card); `buildPropalVars()` with `{signature_link}` and `{valid_until}`.

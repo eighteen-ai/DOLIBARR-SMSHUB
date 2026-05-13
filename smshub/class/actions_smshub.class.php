@@ -21,7 +21,7 @@ class ActionsSmshub
 	{
 		global $user, $langs, $conf;
 		if (empty($conf->smshub) || empty($conf->smshub->enabled)) return 0;
-		if (!$user->hasRight('smshub', 'send')) return 0;
+		if (!$user->admin && !$user->hasRight('smshub', 'send')) return 0;
 
 		$ctx = $parameters['context'] ?? '';
 		$wanted = array('invoicecard', 'ticketcard', 'thirdpartycard', 'propalcard');
