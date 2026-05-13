@@ -96,7 +96,19 @@ class SmsHubSender
 			return false;
 		}
 
-		$task_id = is_array($resp) && !empty($resp['task_id']) ? (int) $resp['task_id'] : null;
+		// SMSHUB doc states task_id is always returned on a successful send.
+		// If it is missing, treat the call as failed and surface the raw body
+		// so the user can diagnose what the server actually returned.
+		$task_id = is_array($resp) && isset($resp['task_id']) && ($resp['task_id'] !== null && $resp['task_id'] !== '' && (int) $resp['task_id'] > 0)
+			? (int) $resp['task_id'] : null;
+
+		if ($task_id === null) {
+			$rawDiag = 'API succeeded (HTTP '.$this->api->last_http_code.') but task_id missing/invalid in response — body: '.dol_substr((string) $this->api->last_raw_body, 0, 500);
+			$this->last_error = $rawDiag;
+			$log->updateStatus(SmsHubLog::STATUS_FAILED, null, $rawDiag);
+			return false;
+		}
+
 		$this->last_task_id = $task_id;
 		$log->updateStatus($scheduled_at ? SmsHubLog::STATUS_SCHEDULED : SmsHubLog::STATUS_SENT, $task_id);
 		return true;

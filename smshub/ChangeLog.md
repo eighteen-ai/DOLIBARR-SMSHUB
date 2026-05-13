@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.3 — 2026-05-14
+
+- Fix: a SMS send call returning a non-JSON body or an `ok:true` response without `task_id` was silently logged as `sent`/`scheduled` while no SMS actually went out. Now treated as a failure with the raw body captured in `error_message` so the journal makes the root cause visible.
+- `SmsHubApi`: expose `last_raw_body` and `last_request_url` properties for diagnostics; reject non-JSON responses early.
+- `test_connection` now also exercises the API key against `/clients` (auth check), not just the public `/version` route.
+- Add **Diagnostic d'envoi** button in setup: sends a real SMS to `SMSHUB_TEST_PHONE` and displays the full HTTP exchange (URL, status code, raw body, decoded response, extracted task_id) so users can see exactly what SMSHUB returns.
+
 ## 1.1.2 — 2026-05-13
 
 - Add `SMSHUB_TEST_PHONE` setting: when set, any SMS sent to this number bypasses the global dry-run flag and reaches SMSHUB for real. Purpose: validate end-to-end behaviour including scheduling (`scheduled_at`) without disabling dry-run for production triggers. Test sends get a `[TEST]` prefix in the log message body.

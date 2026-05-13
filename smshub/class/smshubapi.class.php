@@ -8,6 +8,8 @@ class SmsHubApi
 	public $last_error;
 	public $last_http_code;
 	public $last_response;
+	public $last_raw_body;
+	public $last_request_url;
 
 	public function __construct($server_url = null, $api_key = null)
 	{
@@ -58,7 +60,8 @@ class SmsHubApi
 		}
 
 		$url = $this->server_url.'/api.php?action='.urlencode($action);
-		$headers = array('User-Agent: SMSHUB-Dolibarr/1.0.0', 'Accept: application/json');
+		$this->last_request_url = $url;
+		$headers = array('User-Agent: SMSHUB-Dolibarr/1.1', 'Accept: application/json');
 		if ($authed) $headers[] = 'X-Api-Key: '.$this->api_key;
 
 		$ch = curl_init();
@@ -81,18 +84,24 @@ class SmsHubApi
 
 		if ($raw === false) {
 			$this->last_error = 'Curl error: '.$curlErr;
+			$this->last_raw_body = '';
 			return false;
 		}
 
+		$this->last_raw_body = $raw;
 		$decoded = json_decode($raw, true);
 		$this->last_response = $decoded;
 
 		if ($this->last_http_code >= 400) {
 			$msg = is_array($decoded) && !empty($decoded['error']) ? $decoded['error'] : 'HTTP '.$this->last_http_code;
-			$this->last_error = $msg;
+			$this->last_error = $msg.' — body: '.dol_substr($raw, 0, 300);
 			return false;
 		}
-		if (is_array($decoded) && isset($decoded['ok']) && $decoded['ok'] === false) {
+		if (!is_array($decoded)) {
+			$this->last_error = 'Réponse non JSON (HTTP '.$this->last_http_code.') — body: '.dol_substr($raw, 0, 300);
+			return false;
+		}
+		if (isset($decoded['ok']) && $decoded['ok'] === false) {
 			$this->last_error = $decoded['error'] ?? 'Erreur inconnue';
 			return false;
 		}

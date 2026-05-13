@@ -59,10 +59,45 @@ if ($action === 'save' && GETPOST('token') === newToken()) {
 if ($action === 'test_connection') {
 	$api = new SmsHubApi();
 	$res = $api->version();
+	$auth_diag = '';
 	if ($res && !empty($res['version'])) {
-		$test_result = array('ok' => true, 'msg' => sprintf($langs->trans("SmsHubConnectionOk"), $res['version']));
+		// Now also check the API key by hitting an authenticated endpoint
+		$clients = $api->call('clients', 'GET');
+		if ($clients !== false) {
+			$test_result = array(
+				'ok' => true,
+				'msg' => sprintf($langs->trans("SmsHubConnectionOk"), $res['version']).' — Clé API valide (route /clients OK)',
+			);
+		} else {
+			$test_result = array(
+				'ok' => false,
+				'msg' => 'Serveur joignable (version '.$res['version'].') mais clé API rejetée : '.dol_escape_htmltag($api->last_error ?: 'inconnu'),
+			);
+		}
 	} else {
-		$test_result = array('ok' => false, 'msg' => sprintf($langs->trans("SmsHubConnectionKo"), $api->last_error ?: 'inconnue'));
+		$test_result = array(
+			'ok' => false,
+			'msg' => sprintf($langs->trans("SmsHubConnectionKo"), $api->last_error ?: 'inconnue').' — URL utilisée : '.dol_escape_htmltag($api->last_request_url ?: '(non définie)'),
+		);
+	}
+}
+
+$diag_result = null;
+if ($action === 'diag_send') {
+	$testPhone = getDolGlobalString('SMSHUB_TEST_PHONE', '');
+	if (empty($testPhone)) {
+		setEventMessages('Renseignez d\'abord un numéro de test ci-dessous.', null, 'errors');
+	} else {
+		$api = new SmsHubApi();
+		$msg = '[SMSHUB-DIAG] Test '.dol_print_date(dol_now(), 'dayhour').' depuis '.($mysoc->name ?? 'Dolibarr');
+		$resp = $api->send($testPhone, $msg);
+		$diag_result = array(
+			'url' => $api->last_request_url,
+			'http_code' => $api->last_http_code,
+			'raw_body' => $api->last_raw_body,
+			'decoded' => $api->last_response,
+			'error' => $api->last_error,
+		);
 	}
 }
 
@@ -142,8 +177,30 @@ print '<div class="center" style="margin-top:20px">';
 print '<button type="submit" class="button">'.$langs->trans("Save").'</button>';
 print ' &nbsp; ';
 print '<a class="button button-add" href="?action=test_connection&token='.newToken().'">'.$langs->trans("SmsHubTestConnection").'</a>';
+print ' &nbsp; ';
+print '<a class="button" href="?action=diag_send&token='.newToken().'" onclick="return confirm(\'Envoyer un SMS réel au numéro de test et afficher la réponse brute SMSHUB ?\')">🔎 Diagnostic d\'envoi (vers numéro de test)</a>';
 print '</div>';
 print '</form>';
+
+if ($diag_result !== null) {
+	print '<br><h3>Diagnostic d\'envoi</h3>';
+	print '<table class="noborder centpercent">';
+	print '<tr class="liste_titre"><td class="titlefield">Champ</td><td>Valeur</td></tr>';
+	print '<tr class="oddeven"><td>URL appelée</td><td><code>'.dol_escape_htmltag($diag_result['url']).'</code></td></tr>';
+	print '<tr class="oddeven"><td>Code HTTP</td><td><strong>'.(int) $diag_result['http_code'].'</strong></td></tr>';
+	print '<tr class="oddeven"><td>Réponse brute (body)</td><td><pre style="max-height:200px;overflow:auto;background:#f8f8f8;padding:8px">'.dol_escape_htmltag((string) $diag_result['raw_body']).'</pre></td></tr>';
+	print '<tr class="oddeven"><td>Réponse décodée</td><td><pre style="max-height:200px;overflow:auto;background:#f8f8f8;padding:8px">'.dol_escape_htmltag(json_encode($diag_result['decoded'], JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES)).'</pre></td></tr>';
+	if (!empty($diag_result['error'])) {
+		print '<tr class="oddeven"><td>Erreur</td><td style="color:red">'.dol_escape_htmltag($diag_result['error']).'</td></tr>';
+	}
+	$task_id = is_array($diag_result['decoded']) ? ($diag_result['decoded']['task_id'] ?? null) : null;
+	if (empty($task_id)) {
+		print '<tr class="oddeven"><td style="color:red">⚠️ task_id</td><td style="color:red"><strong>Manquant ou nul</strong> — vérifiez côté serveur SMSHUB que la requête arrive, ou que la clé API a bien des crédits/quota disponibles.</td></tr>';
+	} else {
+		print '<tr class="oddeven"><td style="color:green">✅ task_id</td><td><strong>'.(int) $task_id.'</strong> — vérifiez la réception du SMS sur le numéro de test.</td></tr>';
+	}
+	print '</table>';
+}
 
 print dol_get_fiche_end();
 
