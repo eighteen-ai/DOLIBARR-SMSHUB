@@ -64,6 +64,19 @@ class SmsHubSender
 		$log->fk_user = $user ? $user->id : 0;
 
 		$dryrun = (int) getDolGlobalString('SMSHUB_DRYRUN', '0') === 1;
+
+		// Test-phone bypass: if dry-run is on but the destination matches the configured
+		// test phone, force a real send so the full pipeline (including scheduled_at) can
+		// be verified end-to-end without disabling dry-run for everything else.
+		$testPhoneRaw = getDolGlobalString('SMSHUB_TEST_PHONE', '');
+		if ($dryrun && !empty($testPhoneRaw)) {
+			$testPhone = $this->api->normalizePhone($testPhoneRaw);
+			if ($testPhone !== '' && $testPhone === $normalized) {
+				$dryrun = false;
+				$log->message = '[TEST] '.$log->message;
+			}
+		}
+
 		if ($dryrun) {
 			$log->status = SmsHubLog::STATUS_DRYRUN;
 			$log->create($user);

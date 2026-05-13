@@ -26,6 +26,7 @@ $constants = array(
 	'SMSHUB_API_KEY' => 'alphanohtml',
 	'SMSHUB_DEFAULT_COUNTRY_CODE' => 'alphanohtml',
 	'SMSHUB_SENDER_NAME' => 'alphanohtml',
+	'SMSHUB_TEST_PHONE' => 'alphanohtml',
 );
 $bool_constants = array(
 	'SMSHUB_ENABLE_BILL_VALIDATE',
@@ -106,6 +107,11 @@ print '</td></tr>';
 print '<tr class="oddeven"><td>'.$langs->trans("SmsHubDryRun").'</td><td>';
 print '<input type="checkbox" name="SMSHUB_DRYRUN" value="1"'.(getDolGlobalString('SMSHUB_DRYRUN') ? ' checked' : '').'>';
 print '<br><span class="opacitymedium">'.$langs->trans("SmsHubDryRunHelp").'</span>';
+print '</td></tr>';
+
+print '<tr class="oddeven"><td>Numéro de test (bypass dry-run)</td><td>';
+print '<input type="text" name="SMSHUB_TEST_PHONE" class="flat" value="'.dol_escape_htmltag(getDolGlobalString('SMSHUB_TEST_PHONE', '')).'" placeholder="+33600000000">';
+print '<br><span class="opacitymedium">Si renseigné, tout envoi vers ce numéro part en réel même si dry-run est actif. Permet de tester la planification (scheduled_at) sans désactiver le dry-run global.</span>';
 print '</td></tr>';
 
 print '</table>';
