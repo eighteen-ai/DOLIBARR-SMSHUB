@@ -24,7 +24,7 @@ class modSMSHub extends DolibarrModules
 		$this->descriptionlong = "Intègre SMSHUB (https://smshub.siliteo.com) à Dolibarr. Driver SMS natif compatible avec le module SMS standard, plus automatisations avancées : relances clients par paliers, notifications création/paiement de factures, alertes tickets, modèles SMS avec variables dynamiques.";
 		$this->editor_name = 'SMSHUB';
 		$this->editor_url = 'https://smshub.siliteo.com';
-		$this->version = '1.1.3';
+		$this->version = '1.1.4';
 		$this->const_name = 'MAIN_MODULE_'.strtoupper($this->name);
 		$this->picto = 'phoning';
 
@@ -63,6 +63,7 @@ class modSMSHub extends DolibarrModules
 			13 => array('SMSHUB_ENABLE_PROPAL_REFUSED', 'chaine', '0', 'SMS au refus d\'un devis', 0, 'current', 0),
 			14 => array('SMSHUB_BRIDGE_PUBLIC', 'chaine', '1', 'Exposer le bridge SMSHUB aux autres modules (ex : RelanceAuto)', 0, 'current', 0),
 			15 => array('SMSHUB_TEST_PHONE', 'chaine', '', 'Numéro de test : bypass le dry-run quand le destinataire correspond', 0, 'current', 0),
+			16 => array('SMSHUB_PAYMENT_METHODS_TEXT', 'chaine', 'virement, chèque ou carte bancaire', 'Texte des moyens de paiement (variable {payment_methods_text})', 0, 'current', 0),
 		);
 
 		// Boxes / Widgets

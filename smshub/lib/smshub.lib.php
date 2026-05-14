@@ -15,6 +15,10 @@ if (!function_exists('smshubAdminTabs')) {
 		$head[$h][1] = $langs->trans("SmsHubTemplates");
 		$head[$h][2] = 'templates';
 		$h++;
+		$head[$h][0] = dol_buildpath('/smshub/admin/preview.php', 1);
+		$head[$h][1] = 'Prévisualisation';
+		$head[$h][2] = 'preview';
+		$h++;
 		$head[$h][0] = dol_buildpath('/smshub/admin/log.php', 1);
 		$head[$h][1] = $langs->trans("SmsHubLog");
 		$head[$h][2] = 'log';

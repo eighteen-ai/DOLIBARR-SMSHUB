@@ -128,41 +128,71 @@ class SmsHubTemplate
 	 */
 	public static function availableVariables($context)
 	{
+		// Common base, always available
 		$base = array(
-			'client_name' => 'Nom du client',
+			'client_name' => 'Nom (raison sociale) du client',
 			'company_name' => 'Nom de notre société',
 			'date' => 'Date courante (JJ/MM/AAAA)',
 		);
+
+		// Third-party / contact fields (added for bill/propal/ticket contexts)
+		$thirdparty = array(
+			'client_firstname' => 'Prénom (depuis contact ou nom)',
+			'client_lastname' => 'Nom de famille',
+			'client_civility' => 'Civilité',
+			'client_address' => 'Adresse postale',
+			'client_zip' => 'Code postal',
+			'client_town' => 'Ville',
+			'client_country' => 'Pays',
+			'client_email' => 'Email',
+			'client_phone' => 'Téléphone',
+		);
+
 		switch ($context) {
 			case 'bill':
 			case 'relance':
-				return array_merge($base, array(
+				return array_merge($base, $thirdparty, array(
 					'ref' => 'Référence facture',
 					'amount' => 'Montant TTC formaté',
 					'amount_remaining' => 'Reste à payer',
 					'due_date' => 'Date d\'échéance',
 					'days_late' => 'Jours de retard',
-					'payment_link' => 'Lien paiement en ligne',
+					'payment_link' => 'Lien paiement en ligne (SumUp/Stripe/virement/chèque selon config Dolibarr)',
+					'payment_methods_text' => 'Liste textuelle des moyens de paiement (configurable)',
 				));
 			case 'ticket':
-				return array_merge($base, array(
+				return array_merge($base, $thirdparty, array(
 					'ticket_ref' => 'Référence ticket',
 					'ticket_subject' => 'Sujet ticket',
 					'ticket_status' => 'Statut ticket',
 					'technician' => 'Nom du technicien assigné',
 				));
 			case 'propal':
-				return array_merge($base, array(
+				return array_merge($base, $thirdparty, array(
 					'ref' => 'Référence devis',
 					'amount' => 'Montant TTC',
 					'amount_ht' => 'Montant HT',
 					'valid_until' => 'Date de fin de validité',
 					'days_remaining' => 'Jours restants avant expiration',
 					'signature_link' => 'Lien signature en ligne',
+					'payment_methods_text' => 'Liste textuelle des moyens de paiement (configurable)',
 				));
 			case 'manual':
 			default:
 				return $base;
 		}
+	}
+
+	/**
+	 * Returns the full variables map for all contexts — used by the JS editor
+	 * to update the variables list live when the user switches context.
+	 */
+	public static function allVariablesByContext()
+	{
+		$out = array();
+		foreach (array('manual', 'bill', 'propal', 'ticket', 'relance') as $ctx) {
+			$out[$ctx] = self::availableVariables($ctx);
+		}
+		return $out;
 	}
 }

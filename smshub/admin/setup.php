@@ -27,6 +27,7 @@ $constants = array(
 	'SMSHUB_DEFAULT_COUNTRY_CODE' => 'alphanohtml',
 	'SMSHUB_SENDER_NAME' => 'alphanohtml',
 	'SMSHUB_TEST_PHONE' => 'alphanohtml',
+	'SMSHUB_PAYMENT_METHODS_TEXT' => 'alphanohtml',
 );
 $bool_constants = array(
 	'SMSHUB_ENABLE_BILL_VALIDATE',
@@ -142,6 +143,11 @@ print '</td></tr>';
 print '<tr class="oddeven"><td>'.$langs->trans("SmsHubDryRun").'</td><td>';
 print '<input type="checkbox" name="SMSHUB_DRYRUN" value="1"'.(getDolGlobalString('SMSHUB_DRYRUN') ? ' checked' : '').'>';
 print '<br><span class="opacitymedium">'.$langs->trans("SmsHubDryRunHelp").'</span>';
+print '</td></tr>';
+
+print '<tr class="oddeven"><td>Variable {payment_methods_text}</td><td>';
+print '<input type="text" name="SMSHUB_PAYMENT_METHODS_TEXT" class="flat minwidth500" value="'.dol_escape_htmltag(getDolGlobalString('SMSHUB_PAYMENT_METHODS_TEXT', 'virement, chèque ou carte bancaire')).'">';
+print '<br><span class="opacitymedium">Texte substitué pour {payment_methods_text} dans les templates. Ex : "virement, chèque ou carte (SumUp)".</span>';
 print '</td></tr>';
 
 print '<tr class="oddeven"><td>Numéro de test (bypass dry-run)</td><td>';

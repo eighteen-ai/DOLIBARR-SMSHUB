@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.4 — 2026-05-14
+
+- Enriched variable dictionary for `bill`, `propal`, `ticket` contexts: `{client_firstname}`, `{client_lastname}`, `{client_civility}`, `{client_address}`, `{client_zip}`, `{client_town}`, `{client_country}`, `{client_email}`, `{client_phone}`. Values prefer the billing/customer contact on the document; fall back to the third-party fields. Best-effort firstname/lastname split when only `name` is available.
+- New variable `{payment_methods_text}` for `bill` and `propal` contexts — content configurable via `SMSHUB_PAYMENT_METHODS_TEXT` constant (setup page). Default: "virement, chèque ou carte bancaire". Lets templates mention payment options textually alongside the existing `{payment_link}`.
+- Interactive editor on templates page: variable list rerenders live when the context dropdown changes (no save needed). Click on any variable to insert it at the cursor position in the content textarea.
+- New **Prévisualisation** admin page: pick a real facture/devis/ticket by id + a template, see the rendered SMS in a WhatsApp-style bubble with character count + the full resolved variable map. No SMS sent.
+
 ## 1.1.3 — 2026-05-14
 
 - Fix: a SMS send call returning a non-JSON body or an `ok:true` response without `task_id` was silently logged as `sent`/`scheduled` while no SMS actually went out. Now treated as a failure with the raw body captured in `error_message` so the journal makes the root cause visible.

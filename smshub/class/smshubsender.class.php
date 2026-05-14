@@ -115,6 +115,79 @@ class SmsHubSender
 	}
 
 	/**
+	 * Build the third-party / contact variable subset shared across contexts.
+	 * Prefers the billing contact's data when available, falls back to thirdparty.
+	 *
+	 * @param Societe $thirdparty
+	 * @param Contact|null $contact Optional billing/customer contact
+	 * @return array
+	 */
+	public static function buildThirdpartyVars($thirdparty, $contact = null)
+	{
+		$vars = array(
+			'client_name' => $thirdparty->name ?? '',
+			'client_firstname' => '',
+			'client_lastname' => '',
+			'client_civility' => '',
+			'client_address' => $thirdparty->address ?? '',
+			'client_zip' => $thirdparty->zip ?? '',
+			'client_town' => $thirdparty->town ?? '',
+			'client_country' => $thirdparty->country_code ?? $thirdparty->country ?? '',
+			'client_email' => $thirdparty->email ?? '',
+			'client_phone' => $thirdparty->phone_mobile ?? $thirdparty->phone ?? '',
+		);
+		if ($contact) {
+			if (!empty($contact->firstname)) $vars['client_firstname'] = $contact->firstname;
+			if (!empty($contact->lastname)) $vars['client_lastname'] = $contact->lastname;
+			if (!empty($contact->civility)) $vars['client_civility'] = $contact->civility;
+			if (!empty($contact->civility_code)) $vars['client_civility'] = $contact->civility_code;
+			if (!empty($contact->address)) $vars['client_address'] = $contact->address;
+			if (!empty($contact->zip)) $vars['client_zip'] = $contact->zip;
+			if (!empty($contact->town)) $vars['client_town'] = $contact->town;
+			if (!empty($contact->email)) $vars['client_email'] = $contact->email;
+			if (!empty($contact->phone_pro)) $vars['client_phone'] = $contact->phone_pro;
+			elseif (!empty($contact->phone_mobile)) $vars['client_phone'] = $contact->phone_mobile;
+		}
+		// Best-effort firstname/lastname split when none came from contact: only if name has exactly one space
+		if (empty($vars['client_firstname']) && empty($vars['client_lastname']) && !empty($vars['client_name'])) {
+			$parts = explode(' ', trim($vars['client_name']), 2);
+			if (count($parts) === 2) {
+				$vars['client_firstname'] = $parts[0];
+				$vars['client_lastname'] = $parts[1];
+			} else {
+				$vars['client_lastname'] = $vars['client_name'];
+			}
+		}
+		return $vars;
+	}
+
+	/**
+	 * Load the customer/billing contact for an object that supports getIdContact().
+	 */
+	protected static function loadBillingContact($db, $object, $code = 'BILLING')
+	{
+		if (empty($object->id) || !method_exists($object, 'getIdContact')) return null;
+		$ids = $object->getIdContact('external', $code);
+		if (empty($ids)) {
+			$ids = $object->getIdContact('external', 'CUSTOMER');
+		}
+		if (empty($ids)) return null;
+		require_once DOL_DOCUMENT_ROOT.'/contact/class/contact.class.php';
+		$c = new Contact($db);
+		if ($c->fetch((int) $ids[0]) > 0) return $c;
+		return null;
+	}
+
+	/**
+	 * Configurable list of payment methods text (e.g. "virement, chèque ou carte (SumUp)")
+	 * Used for the {payment_methods_text} variable.
+	 */
+	public static function paymentMethodsText()
+	{
+		return getDolGlobalString('SMSHUB_PAYMENT_METHODS_TEXT', 'virement, chèque ou carte bancaire');
+	}
+
+	/**
 	 * Build the standard variable map for an invoice.
 	 *
 	 * @param Facture $facture
@@ -138,8 +211,9 @@ class SmsHubSender
 			$payment_link = getOnlinePaymentUrl(0, 'invoice', $facture->ref);
 		}
 
-		return array(
-			'client_name' => $facture->thirdparty ? $facture->thirdparty->name : '',
+		$contact = self::loadBillingContact($GLOBALS['db'], $facture, 'BILLING');
+		$base = self::buildThirdpartyVars($facture->thirdparty, $contact);
+		return array_merge($base, array(
 			'company_name' => $mysoc->name ?? '',
 			'ref' => $facture->ref,
 			'amount' => price($amount, 0, $langs, 1, -1, -1, $conf->currency ?? 'EUR'),
@@ -147,8 +221,9 @@ class SmsHubSender
 			'due_date' => $due ? dol_print_date($due, 'day') : '',
 			'days_late' => $days_late,
 			'payment_link' => $payment_link,
+			'payment_methods_text' => self::paymentMethodsText(),
 			'date' => dol_print_date($today, 'day'),
-		);
+		));
 	}
 
 	/**
@@ -176,8 +251,9 @@ class SmsHubSender
 		$today = dol_now();
 		$days_remaining = $valid_until ? max(0, (int) floor(($valid_until - $today) / 86400)) : 0;
 
-		return array(
-			'client_name' => $propal->thirdparty ? $propal->thirdparty->name : '',
+		$contact = self::loadBillingContact($GLOBALS['db'], $propal, 'CUSTOMER');
+		$base = self::buildThirdpartyVars($propal->thirdparty, $contact);
+		return array_merge($base, array(
 			'company_name' => $mysoc->name ?? '',
 			'ref' => $propal->ref,
 			'amount' => price($propal->total_ttc, 0, $langs, 1, -1, -1, $conf->currency ?? 'EUR'),
@@ -185,8 +261,9 @@ class SmsHubSender
 			'valid_until' => $valid_until ? dol_print_date($valid_until, 'day') : '',
 			'days_remaining' => $days_remaining,
 			'signature_link' => $signature_link,
+			'payment_methods_text' => self::paymentMethodsText(),
 			'date' => dol_print_date($today, 'day'),
-		);
+		));
 	}
 
 	/**
@@ -213,15 +290,16 @@ class SmsHubSender
 		$labels = array(0 => 'À traiter', 1 => 'Lu', 3 => 'Assigné', 4 => 'En cours', 5 => 'Besoin info', 6 => 'En attente', 7 => 'En attente', 8 => 'Résolu', 9 => 'Fermé');
 		$status_label = $labels[(int) $ticket->fk_statut] ?? (string) $ticket->fk_statut;
 
-		return array(
-			'client_name' => !empty($ticket->thirdparty) ? $ticket->thirdparty->name : '',
+		$contact = self::loadBillingContact($GLOBALS['db'], $ticket, 'SUPPORTCLI');
+		$base = !empty($ticket->thirdparty) ? self::buildThirdpartyVars($ticket->thirdparty, $contact) : array();
+		return array_merge($base, array(
 			'company_name' => $mysoc->name ?? '',
 			'ticket_ref' => $ticket->ref,
 			'ticket_subject' => $ticket->subject ?? $ticket->track_id ?? '',
 			'ticket_status' => $status_label,
 			'technician' => $tech,
 			'date' => dol_print_date(dol_now(), 'day'),
-		);
+		));
 	}
 
 	/**
