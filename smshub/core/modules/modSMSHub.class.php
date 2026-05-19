@@ -24,7 +24,7 @@ class modSMSHub extends DolibarrModules
 		$this->descriptionlong = "Intègre SMSHUB (https://smshub.siliteo.com) à Dolibarr. Driver SMS natif compatible avec le module SMS standard, plus automatisations avancées : relances clients par paliers, notifications création/paiement de factures, alertes tickets, modèles SMS avec variables dynamiques.";
 		$this->editor_name = 'SMSHUB';
 		$this->editor_url = 'https://smshub.siliteo.com';
-		$this->version = '1.1.6';
+		$this->version = '1.1.7';
 		$this->const_name = 'MAIN_MODULE_'.strtoupper($this->name);
 		$this->picto = 'phoning';
 
@@ -41,6 +41,12 @@ class modSMSHub extends DolibarrModules
 			// page can list SMSHUB as an option. The actual interception happens via the
 			// 'sendsms' hook above.
 			'sms' => 1,
+			// Global JS, loaded on every Dolibarr page. The script no-ops unless it
+			// detects action=presend on a facture/propal/ticket card, in which case it
+			// AJAX-fetches preview data and injects the "send SMS" checkbox into the
+			// mail form. Page-level hooks (printCommonFooter / formObjectOptions) do
+			// not fire reliably on action=presend in Dolibarr 23, hence the JS approach.
+			'js' => array('/smshub/js/smshub_mailform.js'),
 			'models' => 0,
 		);
 

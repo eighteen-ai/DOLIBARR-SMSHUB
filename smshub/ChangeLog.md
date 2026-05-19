@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.7 — 2026-05-19
+
+- Fix (suite): the `printCommonFooter` hook approach from 1.1.6 still produced no output on Dolibarr 23.0.3 in `action=presend` mode. The checkbox injection now bypasses page-level hooks entirely:
+  - New JS file `js/smshub_mailform.js` loaded globally via `module_parts['js']` (same pattern as `aitext`). The script detects the mail-form context client-side and only acts on `action=presend` on facture / propal / ticket cards.
+  - New AJAX endpoint `ajax/mailform_data.php` returns `{phone, template, preview}` so the row can show the real destination number and the rendered SMS preview.
+  - `printCommonFooter` + `renderMailCheckbox` methods removed from `ActionsSmshub` — dead code.
+- **Important** : la prise en compte du nouveau JS nécessite une désactivation/réactivation du module SMSHUB (sinon `module_parts['js']` n'est pas relu).
+
 ## 1.1.6 — 2026-05-19
 
 - Fix: the "Envoyer aussi un SMS au client" checkbox introduced in 1.1.5 was never displayed on the mail send form. `formObjectOptions` is not fired by Dolibarr's card pages when `action=presend` (the regular display path is bypassed for the mail form). The checkbox is now injected from `printCommonFooter`, which runs unconditionally on every page, with URL-based detection of the facture / propal / ticket context to load the right object and render the SMS preview.

@@ -2,7 +2,11 @@
 /* Copyright (C) 2026 SMSHUB - Hook handler:
  *   - "Send SMS via SMSHUB" action button on key cards
  *   - SMS log block in the right column
- *   - "Also send a SMS to the client" checkbox injected into the mail form
+ *   - SMS interception of Dolibarr's CSMSFile (when SMSHUB_INTERCEPT_DOLIBARR_SMS=1)
+ *
+ * Note: the "send SMS to client" checkbox on the mail form is injected client-side
+ * by js/smshub_mailform.js (loaded via module_parts['js']) — page-level hooks do
+ * not fire reliably on action=presend in Dolibarr 23.
  */
 
 class ActionsSmshub
@@ -96,59 +100,6 @@ class ActionsSmshub
 	}
 
 	/**
-	 * Runs at the end of every Dolibarr page (called from main2.inc.php). We use
-	 * it to inject the "send SMS to client" checkbox into the mail form on
-	 * facture / propal / ticket cards when action=presend. printCommonFooter is
-	 * the only hook that fires reliably in that state.
-	 */
-	public function printCommonFooter($parameters, &$object, &$action, $hookmanager)
-	{
-		global $conf, $user, $db;
-		if (empty($conf->smshub) || empty($conf->smshub->enabled)) return 0;
-		if (!$user->admin && !$user->hasRight('smshub', 'send')) return 0;
-		if (((string) GETPOST('action', 'aZ09')) !== 'presend') return 0;
-
-		$script = $_SERVER['PHP_SELF'] ?? '';
-		$source = null;
-		$loaded = null;
-		if (strpos($script, '/compta/facture/card.php') !== false) {
-			$id = (int) (GETPOST('facid', 'int') ?: GETPOST('id', 'int'));
-			if (!$id) return 0;
-			require_once DOL_DOCUMENT_ROOT.'/compta/facture/class/facture.class.php';
-			$o = new Facture($db);
-			if ($o->fetch($id) <= 0) return 0;
-			$o->fetch_thirdparty();
-			$source = 'bill';
-			$loaded = $o;
-		} elseif (strpos($script, '/comm/propal/card.php') !== false) {
-			$id = (int) GETPOST('id', 'int');
-			if (!$id) return 0;
-			require_once DOL_DOCUMENT_ROOT.'/comm/propal/class/propal.class.php';
-			$o = new Propal($db);
-			if ($o->fetch($id) <= 0) return 0;
-			$o->fetch_thirdparty();
-			$source = 'propal';
-			$loaded = $o;
-		} elseif (strpos($script, '/ticket/card.php') !== false) {
-			$id = (int) GETPOST('id', 'int');
-			$track = GETPOST('track_id', 'alphanohtml');
-			require_once DOL_DOCUMENT_ROOT.'/ticket/class/ticket.class.php';
-			$o = new Ticket($db);
-			$ok = false;
-			if ($id) $ok = ($o->fetch($id) > 0);
-			elseif ($track) $ok = ($o->fetch(0, '', $track) > 0);
-			if (!$ok) return 0;
-			$source = 'ticket';
-			$loaded = $o;
-		} else {
-			return 0;
-		}
-
-		$this->resprints = $this->renderMailCheckbox($source, $loaded);
-		return 0;
-	}
-
-	/**
 	 * Intercept Dolibarr's standard SMS send (CSMSFile) and route it through SMSHUB.
 	 *
 	 * Dolibarr calls executeHooks('sendsms', ...) from CSMSFile->sendfile() so that
@@ -186,90 +137,4 @@ class ActionsSmshub
 		return 1;
 	}
 
-	/**
-	 * Build the HTML payload that injects a "send SMS" checkbox row into the
-	 * standard Dolibarr mail form (#mailform). Uses jQuery (always present on
-	 * Dolibarr admin pages). Renders a preview of the SMS the customer will get.
-	 */
-	protected function renderMailCheckbox($source, $object)
-	{
-		require_once DOL_DOCUMENT_ROOT.'/custom/smshub/class/smshubsender.class.php';
-		require_once DOL_DOCUMENT_ROOT.'/custom/smshub/class/smshubtemplate.class.php';
-
-		// Map (source, object) → template + vars.
-		$template_code = null;
-		$vars = array();
-		switch ($source) {
-			case 'bill':
-				$template_code = 'bill_validated';
-				$vars = SmsHubSender::buildBillVars($object);
-				$phone = SmsHubSender::thirdpartyPhone($object->thirdparty ?? null);
-				break;
-			case 'propal':
-				$template_code = 'propal_sent';
-				$vars = SmsHubSender::buildPropalVars($object);
-				$phone = SmsHubSender::thirdpartyPhone($object->thirdparty ?? null);
-				break;
-			case 'ticket':
-				$template_code = 'ticket_modified';
-				$vars = SmsHubSender::buildTicketVars($object);
-				if (empty($object->thirdparty) && !empty($object->fk_soc)) {
-					require_once DOL_DOCUMENT_ROOT.'/societe/class/societe.class.php';
-					$soc = new Societe($this->db);
-					$soc->fetch($object->fk_soc);
-					$object->thirdparty = $soc;
-				}
-				$phone = SmsHubSender::thirdpartyPhone($object->thirdparty ?? null);
-				break;
-			default:
-				return '';
-		}
-
-		// Fetch + render the template body for preview. Silent on missing template.
-		$preview = '';
-		if ($template_code) {
-			$tpl = new SmsHubTemplate($this->db);
-			if ($tpl->fetchByCode($template_code) > 0 && $tpl->active) {
-				$preview = SmsHubTemplate::render($tpl->content, $vars);
-			}
-		}
-
-		$has_phone = !empty($phone);
-		$default_checked = $has_phone ? 'checked' : '';
-		$disabled = $has_phone ? '' : 'disabled';
-		$phone_label = $has_phone ? dol_escape_htmltag($phone) : 'aucun numéro mobile sur la fiche client';
-
-		$preview_html = $preview
-			? '<div id="smshub_sms_preview" style="margin-top:4px;padding:6px;background:#fafafa;border:1px solid #ddd;font-size:12px;color:#444;white-space:pre-wrap">'.dol_escape_htmltag($preview).'</div>'
-			: '<div id="smshub_sms_preview" style="margin-top:4px;font-size:12px;color:#888;font-style:italic">Aucun modèle SMS actif pour ce contexte ('.dol_escape_htmltag($template_code).')</div>';
-
-		// Hidden "0" sent when checkbox is unchecked; checkbox overrides when ticked.
-		// jQuery appends a new <tr> at the end of the mail form's main table.
-		$row = '<tr class="smshub_send_sms_row">'
-			.'<td class="titlefield"><label for="smshub_send_sms_cb">📱 Envoyer aussi un SMS au client</label></td>'
-			.'<td>'
-			.'<input type="hidden" name="smshub_send_sms" value="0">'
-			.'<input type="checkbox" id="smshub_send_sms_cb" name="smshub_send_sms" value="1" '.$default_checked.' '.$disabled.'>'
-			.' <span style="color:#666;font-size:12px">→ '.$phone_label.'</span>'
-			.$preview_html
-			.'</td></tr>';
-
-		$row_js = json_encode($row);
-
-		return <<<HTML
-<script type="text/javascript">
-jQuery(document).ready(function(\$) {
-	var form = \$('#mailform, form[name="mailform"]').first();
-	if (!form.length) return;
-	if (form.find('.smshub_send_sms_row').length) return; // already injected
-	var table = form.find('table').first();
-	if (table.length) {
-		table.find('tbody').length ? table.find('tbody').append($row_js) : table.append($row_js);
-	} else {
-		form.append($row_js);
-	}
-});
-</script>
-HTML;
-	}
 }
