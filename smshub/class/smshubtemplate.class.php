@@ -198,4 +198,101 @@ class SmsHubTemplate
 		}
 		return $out;
 	}
+
+	/**
+	 * Built-in default templates for every supported event. Kept in PHP so the
+	 * module can seed missing rows at activation time (or lazily from any code
+	 * path that needs them) without depending on the SQL data file having run.
+	 */
+	public static function defaultTemplates()
+	{
+		return array(
+			array(
+				'code' => 'bill_validated',
+				'label' => 'Facture émise',
+				'context' => 'bill',
+				'content' => 'Bonjour {client_firstname}, votre facture {ref} ({amount}) est disponible. Échéance : {due_date}. Consulter et régler en ligne : {payment_link} — Merci !',
+			),
+			array(
+				'code' => 'bill_payed',
+				'label' => 'Paiement reçu',
+				'context' => 'bill',
+				'content' => 'Bonjour {client_firstname}, nous avons bien reçu votre règlement pour la facture {ref}. Merci de votre confiance !',
+			),
+			array(
+				'code' => 'ticket_created',
+				'label' => 'Ticket créé',
+				'context' => 'ticket',
+				'content' => 'Bonjour {client_firstname}, votre demande #{ticket_ref} a bien été enregistrée : {ticket_subject}. Suivi en ligne : {ticket_link}',
+			),
+			array(
+				'code' => 'ticket_modified',
+				'label' => 'Ticket modifié',
+				'context' => 'ticket',
+				'content' => 'Bonjour {client_firstname}, mise à jour de votre demande #{ticket_ref} (statut : {ticket_status}). Détails et historique : {ticket_link}',
+			),
+			array(
+				'code' => 'ticket_closed',
+				'label' => 'Ticket résolu',
+				'context' => 'ticket',
+				'content' => 'Bonjour {client_firstname}, votre demande #{ticket_ref} est résolue. Voir la solution : {ticket_link}. À très bientôt !',
+			),
+			array(
+				'code' => 'ticket_assigned_tech',
+				'label' => 'Ticket assigné (technicien)',
+				'context' => 'ticket',
+				'content' => 'Nouveau ticket #{ticket_ref} assigné. Client : {client_name}. Sujet : {ticket_subject}.',
+			),
+			array(
+				'code' => 'propal_validated',
+				'label' => 'Devis validé',
+				'context' => 'propal',
+				'content' => 'Bonjour {client_firstname}, votre devis {ref} ({amount}) est validé. Valable jusqu\'au {valid_until}. Consultable ici : {signature_link}',
+			),
+			array(
+				'code' => 'propal_sent',
+				'label' => 'Devis envoyé',
+				'context' => 'propal',
+				'content' => 'Bonjour {client_firstname}, votre devis {ref} ({amount}) vient de vous être adressé. Consultable et signable en ligne : {signature_link} (validité {valid_until})',
+			),
+			array(
+				'code' => 'propal_signed',
+				'label' => 'Devis signé',
+				'context' => 'propal',
+				'content' => 'Bonjour {client_firstname}, votre devis {ref} est bien signé. Nous revenons vers vous très vite pour la suite. Merci !',
+			),
+			array(
+				'code' => 'propal_refused',
+				'label' => 'Devis refusé',
+				'context' => 'propal',
+				'content' => 'Bonjour {client_firstname}, nous avons pris note de votre refus du devis {ref}. N\'hésitez pas à nous recontacter si nous pouvons l\'ajuster.',
+			),
+		);
+	}
+
+	/**
+	 * Idempotent: inserts every default template that is currently missing.
+	 * Returns the number of rows actually created.
+	 *
+	 * Safe to call from module init() AND from runtime code paths (AJAX, send
+	 * page, etc.) — fetchByCode short-circuits when the row already exists, so
+	 * customized templates are never overwritten.
+	 */
+	public static function seedDefaults($db, $user = null)
+	{
+		if (empty($user)) { global $user; }
+		$created = 0;
+		foreach (self::defaultTemplates() as $def) {
+			$existing = new self($db);
+			if ($existing->fetchByCode($def['code']) > 0) continue;
+			$tpl = new self($db);
+			$tpl->code = $def['code'];
+			$tpl->label = $def['label'];
+			$tpl->content = $def['content'];
+			$tpl->context = $def['context'];
+			$tpl->active = 1;
+			if ($tpl->create($user) > 0) $created++;
+		}
+		return $created;
+	}
 }

@@ -102,11 +102,23 @@ class InterfaceSmsHubTriggers extends DolibarrTriggers
 		return $this->mailCheckboxDecision() === 'on';
 	}
 
+	/**
+	 * If the mail form contributed an explicit phone number, return it; otherwise
+	 * fall back to the thirdparty's phone. Keeps the original numbering rules for
+	 * triggers that fire outside of the mail-form path (BILL_PAYED, etc.).
+	 */
+	protected function pickPhone($thirdparty)
+	{
+		$override = trim((string) ($_POST['smshub_send_sms_phone'] ?? ''));
+		if ($override !== '') return $override;
+		return SmsHubSender::thirdpartyPhone($thirdparty);
+	}
+
 	protected function firePropal($sender, $propal, $template_code)
 	{
 		if (empty($propal->id)) return 0;
 		if (empty($propal->thirdparty)) $propal->fetch_thirdparty();
-		$phone = SmsHubSender::thirdpartyPhone($propal->thirdparty);
+		$phone = $this->pickPhone($propal->thirdparty);
 		if (empty($phone)) return 0;
 		$vars = SmsHubSender::buildPropalVars($propal);
 		$ok = $sender->sendFromTemplate($template_code, $phone, $vars, 'propal', $propal->id);
@@ -117,7 +129,7 @@ class InterfaceSmsHubTriggers extends DolibarrTriggers
 	{
 		if (empty($facture->id)) return 0;
 		if (empty($facture->thirdparty)) $facture->fetch_thirdparty();
-		$phone = SmsHubSender::thirdpartyPhone($facture->thirdparty);
+		$phone = $this->pickPhone($facture->thirdparty);
 		if (empty($phone)) return 0;
 		$vars = SmsHubSender::buildBillVars($facture);
 		$ok = $sender->sendFromTemplate($template_code, $phone, $vars, 'bill', $facture->id);
@@ -133,7 +145,7 @@ class InterfaceSmsHubTriggers extends DolibarrTriggers
 			$soc->fetch($ticket->fk_soc);
 			$ticket->thirdparty = $soc;
 		}
-		$phone = SmsHubSender::thirdpartyPhone($ticket->thirdparty ?? null);
+		$phone = $this->pickPhone($ticket->thirdparty ?? null);
 		if (empty($phone)) return 0;
 		$vars = SmsHubSender::buildTicketVars($ticket);
 		$ok = $sender->sendFromTemplate($template_code, $phone, $vars, 'ticket', $ticket->id);

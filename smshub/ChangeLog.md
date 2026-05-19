@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.8 — 2026-05-19
+
+- Editable destination phone on the mail-form row: the number pre-filled from the client record can now be modified inline before sending. Posted as `smshub_send_sms_phone`; the trigger handler honors it for `BILL_SENTBYMAIL`, `PROPAL_SENTBYMAIL` and ticket message-sent variants (falls back to the thirdparty's phone for triggers fired outside the mail form, e.g. `BILL_PAYED`).
+- Auto-seeding of default SMS templates: `SmsHubTemplate::seedDefaults()` inserts any missing template (`bill_validated`, `bill_payed`, `propal_sent`, `propal_signed`, `propal_validated`, `propal_refused`, `ticket_created`, `ticket_modified`, `ticket_closed`, `ticket_assigned_tech`). Called from `modSMSHub::init()` (module activation) and lazily from `ajax/mailform_data.php` (so installs without templates get them on first mail-form load). Idempotent — never overwrites a customized template, only fills the gaps. Default bodies include the rich variables (`{client_firstname}`, `{payment_link}`, `{signature_link}`, `{ticket_link}`, etc.).
+
 ## 1.1.7 — 2026-05-19
 
 - Fix (suite): the `printCommonFooter` hook approach from 1.1.6 still produced no output on Dolibarr 23.0.3 in `action=presend` mode. The checkbox injection now bypasses page-level hooks entirely:

@@ -33,6 +33,10 @@ if (empty($conf->smshub) || empty($conf->smshub->enabled)) {
 require_once DOL_DOCUMENT_ROOT.'/custom/smshub/class/smshubsender.class.php';
 require_once DOL_DOCUMENT_ROOT.'/custom/smshub/class/smshubtemplate.class.php';
 
+// Lazy-seed default templates so existing installs that never had any (e.g. fresh
+// reactivation without SQL data file) still get a working preview here.
+SmsHubTemplate::seedDefaults($db, $user);
+
 $type = GETPOST('type', 'aZ09');
 $id = (int) GETPOST('id', 'int');
 if (empty($id) || !in_array($type, array('bill', 'propal', 'ticket'), true)) {

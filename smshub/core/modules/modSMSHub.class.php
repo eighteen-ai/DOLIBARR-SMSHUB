@@ -24,7 +24,7 @@ class modSMSHub extends DolibarrModules
 		$this->descriptionlong = "Intègre SMSHUB (https://smshub.siliteo.com) à Dolibarr. Driver SMS natif compatible avec le module SMS standard, plus automatisations avancées : relances clients par paliers, notifications création/paiement de factures, alertes tickets, modèles SMS avec variables dynamiques.";
 		$this->editor_name = 'SMSHUB';
 		$this->editor_url = 'https://smshub.siliteo.com';
-		$this->version = '1.1.7';
+		$this->version = '1.1.8';
 		$this->const_name = 'MAIN_MODULE_'.strtoupper($this->name);
 		$this->picto = 'phoning';
 
@@ -217,7 +217,17 @@ class modSMSHub extends DolibarrModules
 		$sql = array();
 		$result = $this->_load_tables('/smshub/sql/');
 		if ($result < 0) return -1;
-		return $this->_init($sql, $options);
+		$initRes = $this->_init($sql, $options);
+		// Belt-and-suspenders template seeding: the SQL data file already INSERT
+		// IGNOREs defaults, but some installs end up without rows (older versions
+		// shipped without that file, or the SQL loader skipped it). The PHP seeder
+		// is fully idempotent — never overwrites customized templates.
+		if ($initRes >= 0) {
+			require_once dirname(__FILE__).'/../../class/smshubtemplate.class.php';
+			global $user;
+			SmsHubTemplate::seedDefaults($this->db, $user);
+		}
+		return $initRes;
 	}
 
 	public function remove($options = '')
