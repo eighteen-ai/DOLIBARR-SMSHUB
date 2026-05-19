@@ -114,6 +114,31 @@ class InterfaceSmsHubTriggers extends DolibarrTriggers
 		return SmsHubSender::thirdpartyPhone($thirdparty);
 	}
 
+	/**
+	 * Custom SMS body posted from the mail-form textarea. Returns null when no
+	 * textarea was contributed (e.g. trigger fired outside the mail-form path),
+	 * empty string never gets through (we keep the templated default in that case).
+	 */
+	protected function pickCustomMessage()
+	{
+		if (!isset($_POST['smshub_send_sms_message'])) return null;
+		$msg = trim((string) $_POST['smshub_send_sms_message']);
+		return $msg !== '' ? $msg : null;
+	}
+
+	/**
+	 * Dispatch helper: either send the user-edited body verbatim (sendDirect)
+	 * or fall back to rendering the template with the standard variable map.
+	 */
+	protected function dispatch($sender, $template_code, $phone, $vars, $source, $fk_source)
+	{
+		$custom = $this->pickCustomMessage();
+		if ($custom !== null) {
+			return $sender->sendDirect($phone, $custom, $source, $fk_source, null, $template_code);
+		}
+		return $sender->sendFromTemplate($template_code, $phone, $vars, $source, $fk_source);
+	}
+
 	protected function firePropal($sender, $propal, $template_code)
 	{
 		if (empty($propal->id)) return 0;
@@ -121,7 +146,7 @@ class InterfaceSmsHubTriggers extends DolibarrTriggers
 		$phone = $this->pickPhone($propal->thirdparty);
 		if (empty($phone)) return 0;
 		$vars = SmsHubSender::buildPropalVars($propal);
-		$ok = $sender->sendFromTemplate($template_code, $phone, $vars, 'propal', $propal->id);
+		$ok = $this->dispatch($sender, $template_code, $phone, $vars, 'propal', $propal->id);
 		return $ok ? 1 : 0;
 	}
 
@@ -132,7 +157,7 @@ class InterfaceSmsHubTriggers extends DolibarrTriggers
 		$phone = $this->pickPhone($facture->thirdparty);
 		if (empty($phone)) return 0;
 		$vars = SmsHubSender::buildBillVars($facture);
-		$ok = $sender->sendFromTemplate($template_code, $phone, $vars, 'bill', $facture->id);
+		$ok = $this->dispatch($sender, $template_code, $phone, $vars, 'bill', $facture->id);
 		return $ok ? 1 : 0;
 	}
 
@@ -148,7 +173,7 @@ class InterfaceSmsHubTriggers extends DolibarrTriggers
 		$phone = $this->pickPhone($ticket->thirdparty ?? null);
 		if (empty($phone)) return 0;
 		$vars = SmsHubSender::buildTicketVars($ticket);
-		$ok = $sender->sendFromTemplate($template_code, $phone, $vars, 'ticket', $ticket->id);
+		$ok = $this->dispatch($sender, $template_code, $phone, $vars, 'ticket', $ticket->id);
 		return $ok ? 1 : 0;
 	}
 

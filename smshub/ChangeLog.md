@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.11 — 2026-05-19
+
+- Editable SMS body on the mail-form row: the rendered template preview now lands in a `<textarea>` (`smshub_send_sms_message`) that the user can tweak before submitting. A small live counter shows length + estimated SMS segments (160 chars GSM-7 / 70 chars Unicode).
+- Trigger handler honors the posted body verbatim through a new `dispatch()` helper that calls `SmsHubSender::sendDirect()` when a custom message is present, falling back to `sendFromTemplate()` (re-render) otherwise. The template code is still recorded in the log + agenda event so the origin is traceable.
+
 ## 1.1.10 — 2026-05-19
 
 - Each successful SMS send (skipping dry-runs) now records a Dolibarr agenda event in `llx_actioncomm` with code `AC_BILL_SENTBYSMS` / `AC_PROPAL_SENTBYSMS` / `AC_TICKET_SENTBYSMS` (depending on source), `elementtype` matching the source, `fk_element` = the document id, `socid` = the thirdparty, label "SMS envoyé via SMSHUB — <ref>" and the message + destination + task_id in `note_private`. Mirrors the pattern used by `DOLIBARR-CHORUSPRO`.
