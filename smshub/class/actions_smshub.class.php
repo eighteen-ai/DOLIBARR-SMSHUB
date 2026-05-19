@@ -56,12 +56,15 @@ class ActionsSmshub
 	}
 
 	/**
-	 * Hook called on card pages: outputs SMS log block + injects the "send SMS"
-	 * checkbox into the mail form (when action=presend) via a small JS payload.
+	 * Hook called on card pages: outputs the SMS log block in the right panel.
+	 *
+	 * Note: Dolibarr SKIPS this hook on most cards when action=presend (the
+	 * regular display path is bypassed in favor of the mail form), so the
+	 * "send SMS" checkbox is injected via printCommonFooter() below instead.
 	 */
 	public function formObjectOptions($parameters, &$object, &$action, $hookmanager)
 	{
-		global $langs, $conf, $user;
+		global $langs, $conf;
 		if (empty($conf->smshub) || empty($conf->smshub->enabled)) return 0;
 
 		$ctx = $parameters['context'] ?? '';
@@ -74,29 +77,74 @@ class ActionsSmshub
 		foreach ($source_map as $k => $v) if (strpos($ctx, $k) !== false) { $source = $v; break; }
 		if (!$source || empty($object->id)) return 0;
 
-		$html = '';
-
-		// 1) Mail-form checkbox injection (only when the user is on the "Send by email" tab).
-		if ($action === 'presend' && ($user->admin || $user->hasRight('smshub', 'send'))) {
-			$html .= $this->renderMailCheckbox($source, $object);
-		}
-
-		// 2) Recent SMS log for this object.
 		require_once DOL_DOCUMENT_ROOT.'/custom/smshub/class/smshublog.class.php';
 		$rows = SmsHubLog::listRecent($this->db, 10, array('source' => $source));
 		$rows = array_filter($rows, function($r) use ($object) { return (int) $r->fk_source === (int) $object->id; });
-		if (!empty($rows)) {
-			$html .= '<div class="info" style="margin-top:10px">';
-			$html .= '<strong>SMS envoyés (SMSHUB)</strong><table class="noborder centpercent">';
-			foreach ($rows as $r) {
-				$html .= '<tr><td>'.dol_print_date($this->db->jdate($r->datec), 'dayhour').'</td>';
-				$html .= '<td>'.dol_escape_htmltag($r->phone).'</td>';
-				$html .= '<td>'.dol_escape_htmltag($r->status).'</td></tr>';
-			}
-			$html .= '</table></div>';
+		if (empty($rows)) return 0;
+
+		$html = '<div class="info" style="margin-top:10px">';
+		$html .= '<strong>SMS envoyés (SMSHUB)</strong><table class="noborder centpercent">';
+		foreach ($rows as $r) {
+			$html .= '<tr><td>'.dol_print_date($this->db->jdate($r->datec), 'dayhour').'</td>';
+			$html .= '<td>'.dol_escape_htmltag($r->phone).'</td>';
+			$html .= '<td>'.dol_escape_htmltag($r->status).'</td></tr>';
 		}
+		$html .= '</table></div>';
 
 		$this->resprints = $html;
+		return 0;
+	}
+
+	/**
+	 * Runs at the end of every Dolibarr page (called from main2.inc.php). We use
+	 * it to inject the "send SMS to client" checkbox into the mail form on
+	 * facture / propal / ticket cards when action=presend. printCommonFooter is
+	 * the only hook that fires reliably in that state.
+	 */
+	public function printCommonFooter($parameters, &$object, &$action, $hookmanager)
+	{
+		global $conf, $user, $db;
+		if (empty($conf->smshub) || empty($conf->smshub->enabled)) return 0;
+		if (!$user->admin && !$user->hasRight('smshub', 'send')) return 0;
+		if (((string) GETPOST('action', 'aZ09')) !== 'presend') return 0;
+
+		$script = $_SERVER['PHP_SELF'] ?? '';
+		$source = null;
+		$loaded = null;
+		if (strpos($script, '/compta/facture/card.php') !== false) {
+			$id = (int) (GETPOST('facid', 'int') ?: GETPOST('id', 'int'));
+			if (!$id) return 0;
+			require_once DOL_DOCUMENT_ROOT.'/compta/facture/class/facture.class.php';
+			$o = new Facture($db);
+			if ($o->fetch($id) <= 0) return 0;
+			$o->fetch_thirdparty();
+			$source = 'bill';
+			$loaded = $o;
+		} elseif (strpos($script, '/comm/propal/card.php') !== false) {
+			$id = (int) GETPOST('id', 'int');
+			if (!$id) return 0;
+			require_once DOL_DOCUMENT_ROOT.'/comm/propal/class/propal.class.php';
+			$o = new Propal($db);
+			if ($o->fetch($id) <= 0) return 0;
+			$o->fetch_thirdparty();
+			$source = 'propal';
+			$loaded = $o;
+		} elseif (strpos($script, '/ticket/card.php') !== false) {
+			$id = (int) GETPOST('id', 'int');
+			$track = GETPOST('track_id', 'alphanohtml');
+			require_once DOL_DOCUMENT_ROOT.'/ticket/class/ticket.class.php';
+			$o = new Ticket($db);
+			$ok = false;
+			if ($id) $ok = ($o->fetch($id) > 0);
+			elseif ($track) $ok = ($o->fetch(0, '', $track) > 0);
+			if (!$ok) return 0;
+			$source = 'ticket';
+			$loaded = $o;
+		} else {
+			return 0;
+		}
+
+		$this->resprints = $this->renderMailCheckbox($source, $loaded);
 		return 0;
 	}
 

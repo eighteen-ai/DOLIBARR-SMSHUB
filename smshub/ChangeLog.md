@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.6 — 2026-05-19
+
+- Fix: the "Envoyer aussi un SMS au client" checkbox introduced in 1.1.5 was never displayed on the mail send form. `formObjectOptions` is not fired by Dolibarr's card pages when `action=presend` (the regular display path is bypassed for the mail form). The checkbox is now injected from `printCommonFooter`, which runs unconditionally on every page, with URL-based detection of the facture / propal / ticket context to load the right object and render the SMS preview.
+
 ## 1.1.5 — 2026-05-19
 
 - **Case à cocher "Envoyer aussi un SMS au client" sur le formulaire d'envoi de mail** (cartes facture / devis / ticket). Affiche l'aperçu rendu du SMS (template `bill_validated` / `propal_sent` / `ticket_modified`), le numéro destinataire, et déclenche l'envoi automatiquement après l'envoi du mail. Cochage par défaut quand un numéro mobile est présent sur le client; désactivé sinon. Quand la case est explicitement décochée, elle prend le dessus sur les déclencheurs globaux (`SMSHUB_ENABLE_PROPAL_SENT`) pour éviter les doubles envois.
