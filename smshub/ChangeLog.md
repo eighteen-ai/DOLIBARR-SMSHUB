@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.12 — 2026-05-19
+
+- Mail-form row : the editable textarea introduced in 1.1.11 was hidden by default and made visible by jQuery only when the AJAX preview arrived. On installs where the cached JS was still v1.1.10 the user saw the old read-only div instead. Now the textarea is rendered visible from the start (jQuery just fills it once the AJAX returns), so an out-of-date cached JS is immediately distinguishable from the new layout. Added a `[SMSHUB] mailform JS 1.1.12` console.log + a small `vN` version tag next to the label so users can confirm which version is loaded.
+
 ## 1.1.11 — 2026-05-19
 
 - Editable SMS body on the mail-form row: the rendered template preview now lands in a `<textarea>` (`smshub_send_sms_message`) that the user can tweak before submitting. A small live counter shows length + estimated SMS segments (160 chars GSM-7 / 70 chars Unicode).

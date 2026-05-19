@@ -1,16 +1,10 @@
-/* SMSHUB — inject "Send SMS to client" checkbox into Dolibarr's mail send form.
- *
- * Loaded on every Dolibarr page via module_parts['js']. No-ops unless:
- *   - URL contains action=presend
- *   - Page path is facture / propal / ticket card
- *   - The mail form (#mailform) is present in the DOM
- *
- * Fetches phone + SMS preview from /custom/smshub/ajax/mailform_data.php and
- * appends a row to the mail form table. The phone number is rendered as an
- * editable input so the user can override the thirdparty's number per-send.
- * A hidden 0 ensures the unticked state is also posted so the trigger handler
- * can distinguish "user opted out" from "form did not contribute". */
+/* SMSHUB — inject "Send SMS to client" row (with editable textarea) into
+ * Dolibarr's mail send form. Loaded on every page via module_parts['js'].
+ * Version stamp logged to console so the loaded file is identifiable. */
 (function () {
+	var SMSHUB_JS_VERSION = '1.1.12';
+	if (typeof console !== 'undefined' && console.log) console.log('[SMSHUB] mailform JS', SMSHUB_JS_VERSION);
+
 	if (typeof jQuery === 'undefined') return;
 
 	jQuery(function ($) {
@@ -36,17 +30,21 @@
 		var objId = getParam(idParam) || form.find('input[name="' + idParam + '"]').val() || form.find('input[name="id"]').val() || '';
 		if (!objId) return;
 
+		// Textarea is always rendered (not hidden) so an out-of-date cached JS is
+		// obvious vs. the new editable layout. Starts pre-populated with a hint;
+		// AJAX overwrites it with the rendered template content.
 		var placeholder =
 			'<tr class="smshub_send_sms_row">' +
-				'<td class="titlefield"><label for="smshub_send_sms_cb">📱 Envoyer aussi un SMS au client</label></td>' +
+				'<td class="titlefield"><label for="smshub_send_sms_cb">📱 Envoyer aussi un SMS au client</label><br><span style="font-size:10px;color:#999">v' + SMSHUB_JS_VERSION + '</span></td>' +
 				'<td>' +
 					'<input type="hidden" name="smshub_send_sms" value="0">' +
 					'<input type="checkbox" id="smshub_send_sms_cb" name="smshub_send_sms" value="1">' +
 					' &nbsp; ' +
 					'<input type="text" class="smshub_send_sms_phone_input" name="smshub_send_sms_phone" placeholder="+33600000000" style="width:180px" autocomplete="off">' +
 					' <span class="smshub_send_sms_meta" style="margin-left:8px;color:#666;font-size:12px">…chargement…</span>' +
-					'<textarea class="smshub_send_sms_textarea" name="smshub_send_sms_message" rows="4" style="display:none;width:95%;margin-top:6px;font-family:Menlo,Consolas,monospace;font-size:12px;background:#fafafa;border:1px solid #ddd;padding:8px;color:#333" placeholder="Texte du SMS — modifiable avant envoi"></textarea>' +
-					'<div class="smshub_send_sms_count" style="display:none;font-size:11px;color:#888;text-align:right;margin-top:2px"></div>' +
+					'<br>' +
+					'<textarea class="smshub_send_sms_textarea" name="smshub_send_sms_message" rows="5" style="width:95%;margin-top:6px;font-family:Menlo,Consolas,monospace;font-size:12px;background:#fafafa;border:1px solid #c0c0c0;border-radius:4px;padding:8px;color:#222;box-sizing:border-box" placeholder="Texte du SMS — modifiable avant envoi (chargement en cours…)"></textarea>' +
+					'<div class="smshub_send_sms_count" style="font-size:11px;color:#888;text-align:right;margin-top:2px">—</div>' +
 				'</td>' +
 			'</tr>';
 
@@ -62,8 +60,6 @@
 		var textarea = row.find('.smshub_send_sms_textarea');
 		var counter = row.find('.smshub_send_sms_count');
 
-		// Standard SMS lengths: 160 chars for GSM-7, 70 for any-Unicode-char message.
-		// Pure-ASCII heuristic is rough but enough for a hint.
 		function updateCount() {
 			var v = textarea.val() || '';
 			var len = v.length;
@@ -73,6 +69,7 @@
 			counter.text(len + ' caractère' + (len > 1 ? 's' : '') +
 				(segments > 0 ? ' · ' + segments + ' SMS (' + segmentSize + ' / segment' + (unicode ? ', mode Unicode' : '') + ')' : ''));
 		}
+		textarea.on('input', updateCount);
 
 		var docroot = (typeof window.DOL_URL_ROOT !== 'undefined') ? window.DOL_URL_ROOT : '/htdocs';
 		var ajaxUrl = docroot + '/custom/smshub/ajax/mailform_data.php?type=' + encodeURIComponent(type) + '&id=' + encodeURIComponent(objId);
@@ -83,6 +80,7 @@
 			.done(function (data) {
 				if (!data || data.ok !== true) {
 					meta.text(data && data.error ? data.error : 'numéro client introuvable');
+					textarea.attr('placeholder', 'Aucun template trouvé — saisissez le SMS ici');
 					return;
 				}
 				phoneInput.val(data.phone || '');
@@ -92,13 +90,11 @@
 				} else {
 					meta.text('aucun numéro mobile sur la fiche client — saisissez-le ci-dessus');
 				}
-				if (data.preview) {
-					textarea.val(data.preview);
-					textarea.show();
-					counter.show();
-					updateCount();
-					textarea.on('input', updateCount);
+				textarea.val(data.preview || '');
+				if (!data.preview) {
+					textarea.attr('placeholder', 'Aucun modèle SMS — tapez le message à envoyer ici');
 				}
+				updateCount();
 			});
 	});
 })();
