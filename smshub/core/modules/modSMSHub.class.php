@@ -24,7 +24,7 @@ class modSMSHub extends DolibarrModules
 		$this->descriptionlong = "Intègre SMSHUB (https://smshub.siliteo.com) à Dolibarr. Driver SMS natif compatible avec le module SMS standard, plus automatisations avancées : relances clients par paliers, notifications création/paiement de factures, alertes tickets, modèles SMS avec variables dynamiques.";
 		$this->editor_name = 'SMSHUB';
 		$this->editor_url = 'https://smshub.siliteo.com';
-		$this->version = '1.1.8';
+		$this->version = '1.1.9';
 		$this->const_name = 'MAIN_MODULE_'.strtoupper($this->name);
 		$this->picto = 'phoning';
 
@@ -34,13 +34,12 @@ class modSMSHub extends DolibarrModules
 				'invoicecard', 'ticketcard', 'thirdpartycard', 'propalcard',
 				// 'sendsms' lets us intercept any Dolibarr SMS send (notifications module,
 				// payment confirmations, etc.) and route it through SMSHUB. Activated only
-				// when SMSHUB_INTERCEPT_DOLIBARR_SMS = 1.
+				// when SMSHUB_INTERCEPT_DOLIBARR_SMS = 1. This IS the supported way to
+				// integrate with Dolibarr's SMS layer; there is no "native SMS operator
+				// registration" for third-party modules without shipping a full
+				// CSMSFile-compatible class.
 				'sendsms',
 			)),
-			// Declares this module as an SMS-capable provider so Dolibarr's SMS admin
-			// page can list SMSHUB as an option. The actual interception happens via the
-			// 'sendsms' hook above.
-			'sms' => 1,
 			// Global JS, loaded on every Dolibarr page. The script no-ops unless it
 			// detects action=presend on a facture/propal/ticket card, in which case it
 			// AJAX-fetches preview data and injects the "send SMS" checkbox into the
@@ -214,6 +213,14 @@ class modSMSHub extends DolibarrModules
 
 	public function init($options = '')
 	{
+		// Drop the broken MAIN_MODULE_SMSHUB_SMS constant that v1.1.5–1.1.7 set to '1'
+		// (Dolibarr's SMS test page errors out with "SMS manager '1' not found"). The
+		// module never shipped a CSMSFile-compatible class, so this const should not
+		// exist — integration with Dolibarr's SMS layer happens through the 'sendsms'
+		// hook (SMSHUB_INTERCEPT_DOLIBARR_SMS), not through MAIN_MODULE_*_SMS.
+		require_once DOL_DOCUMENT_ROOT.'/core/lib/admin.lib.php';
+		dolibarr_del_const($this->db, 'MAIN_MODULE_SMSHUB_SMS', -1);
+
 		$sql = array();
 		$result = $this->_load_tables('/smshub/sql/');
 		if ($result < 0) return -1;

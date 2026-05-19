@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.9 — 2026-05-19
+
+- Fix: Dolibarr's SMS test page (Outils → SMS) errored out with `The SMS manager '1' defined into SMS setup MAIN_MODULE_SMSHUB_SMS is not found`. The `'sms' => 1` entry I added to `module_parts` in 1.1.5 was incorrect — Dolibarr interprets the value as the SMS manager class name. The supported way for third-party modules to integrate with Dolibarr's SMS layer is via the `sendsms` hook (which the module already provides through `SMSHUB_INTERCEPT_DOLIBARR_SMS`), not via `MAIN_MODULE_*_SMS`. Removed the broken module_parts entry, and `modSMSHub::init()` now deletes the stale `MAIN_MODULE_SMSHUB_SMS` constant on reactivation so existing installs are repaired.
+- The About page no longer claims native operator registration — it now accurately describes the hook-based integration (and explains why SMSHUB does not appear in the "Fournisseur de SMS" dropdown).
+
 ## 1.1.8 — 2026-05-19
 
 - Editable destination phone on the mail-form row: the number pre-filled from the client record can now be modified inline before sending. Posted as `smshub_send_sms_phone`; the trigger handler honors it for `BILL_SENTBYMAIL`, `PROPAL_SENTBYMAIL` and ticket message-sent variants (falls back to the thirdparty's phone for triggers fired outside the mail form, e.g. `BILL_PAYED`).

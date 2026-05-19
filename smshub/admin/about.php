@@ -29,15 +29,16 @@ print '<p>Repo GitHub : <a href="https://github.com/eighteen-ai/DOLIBARR-SMSHUB"
 print '</div>';
 
 $intercept = (int) getDolGlobalString('SMSHUB_INTERCEPT_DOLIBARR_SMS') === 1;
-print '<br><h3>Intégration "opérateur SMS Dolibarr"</h3>';
+print '<br><h3>Intégration SMS Dolibarr</h3>';
 print '<div class="info">';
-print '<p>Le module se déclare auprès de Dolibarr comme fournisseur SMS (<code>module_parts[\'sms\']</code>) et écoute le hook <code>sendsms</code> émis par <code>CSMSFile::sendfile()</code>.</p>';
+print '<p>Le module écoute le hook <code>sendsms</code> émis par <code>CSMSFile::sendfile()</code>. Quand un autre code Dolibarr (module Notifications, confirmation de paiement, etc.) appelle <code>CSMSFile</code>, le SMS est routé via SMSHUB au lieu du fournisseur configuré dans Outils → SMS.</p>';
 if ($intercept) {
-	print '<p style="color:green"><strong>✅ Interception active</strong> — tous les SMS envoyés par Dolibarr (module Notifications, confirmations de paiement, etc.) sont routés via SMSHUB.</p>';
+	print '<p style="color:green"><strong>✅ Interception active</strong> — les SMS Dolibarr standards sont routés via SMSHUB.</p>';
 } else {
 	print '<p style="color:#888"><strong>○ Interception désactivée</strong> — activez l\'option « Intercepter tous les SMS Dolibarr » dans la configuration pour router les envois standard via SMSHUB.</p>';
 }
-print '<p><span class="opacitymedium">Indépendamment de cette option, les déclencheurs SMSHUB (facture/propal/ticket) et la case à cocher sur les formulaires d\'envoi de mail fonctionnent toujours.</span></p>';
+print '<p><span class="opacitymedium">Le module n\'apparaît PAS dans la liste déroulante « Fournisseur de SMS » d\'<em>Outils → SMS → Configuration</em> : cette liste demande une classe <code>CSMSFile</code>-compatible que le module ne fournit pas (les hooks et la case à cocher mail couvrent tous les usages courants sans cette intégration).</span></p>';
+print '<p><span class="opacitymedium">Indépendamment, les déclencheurs SMSHUB (facture/propal/ticket) et la case à cocher sur les formulaires d\'envoi de mail fonctionnent toujours.</span></p>';
 print '</div>';
 
 print dol_get_fiche_end();
