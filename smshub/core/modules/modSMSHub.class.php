@@ -24,13 +24,23 @@ class modSMSHub extends DolibarrModules
 		$this->descriptionlong = "Intègre SMSHUB (https://smshub.siliteo.com) à Dolibarr. Driver SMS natif compatible avec le module SMS standard, plus automatisations avancées : relances clients par paliers, notifications création/paiement de factures, alertes tickets, modèles SMS avec variables dynamiques.";
 		$this->editor_name = 'SMSHUB';
 		$this->editor_url = 'https://smshub.siliteo.com';
-		$this->version = '1.1.4';
+		$this->version = '1.1.5';
 		$this->const_name = 'MAIN_MODULE_'.strtoupper($this->name);
 		$this->picto = 'phoning';
 
 		$this->module_parts = array(
 			'triggers' => 1,
-			'hooks' => array('hookcontext' => array('invoicecard', 'ticketcard', 'thirdpartycard', 'propalcard')),
+			'hooks' => array('hookcontext' => array(
+				'invoicecard', 'ticketcard', 'thirdpartycard', 'propalcard',
+				// 'sendsms' lets us intercept any Dolibarr SMS send (notifications module,
+				// payment confirmations, etc.) and route it through SMSHUB. Activated only
+				// when SMSHUB_INTERCEPT_DOLIBARR_SMS = 1.
+				'sendsms',
+			)),
+			// Declares this module as an SMS-capable provider so Dolibarr's SMS admin
+			// page can list SMSHUB as an option. The actual interception happens via the
+			// 'sendsms' hook above.
+			'sms' => 1,
 			'models' => 0,
 		);
 
@@ -64,6 +74,7 @@ class modSMSHub extends DolibarrModules
 			14 => array('SMSHUB_BRIDGE_PUBLIC', 'chaine', '1', 'Exposer le bridge SMSHUB aux autres modules (ex : RelanceAuto)', 0, 'current', 0),
 			15 => array('SMSHUB_TEST_PHONE', 'chaine', '', 'Numéro de test : bypass le dry-run quand le destinataire correspond', 0, 'current', 0),
 			16 => array('SMSHUB_PAYMENT_METHODS_TEXT', 'chaine', 'virement, chèque ou carte bancaire', 'Texte des moyens de paiement (variable {payment_methods_text})', 0, 'current', 0),
+			17 => array('SMSHUB_INTERCEPT_DOLIBARR_SMS', 'chaine', '0', 'Intercepter tous les SMS Dolibarr (CSMSFile) et les router via SMSHUB', 0, 'current', 0),
 		);
 
 		// Boxes / Widgets

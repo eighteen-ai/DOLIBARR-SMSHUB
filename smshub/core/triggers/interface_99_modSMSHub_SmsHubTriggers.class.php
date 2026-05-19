@@ -35,6 +35,11 @@ class InterfaceSmsHubTriggers extends DolibarrTriggers
 				if (!getDolGlobalString('SMSHUB_ENABLE_BILL_PAYED')) return 0;
 				return $this->fireBill($sender, $object, 'bill_payed');
 
+			case 'BILL_SENTBYMAIL':
+				// No global automation for this event — driven entirely by the mail-form checkbox.
+				if (!$this->mailCheckboxWantsSms()) return 0;
+				return $this->fireBill($sender, $object, 'bill_validated');
+
 			case 'TICKET_CREATE':
 				if (!getDolGlobalString('SMSHUB_ENABLE_TICKET_CREATE')) return 0;
 				return $this->fireTicket($sender, $object, 'ticket_created');
@@ -51,12 +56,22 @@ class InterfaceSmsHubTriggers extends DolibarrTriggers
 				if (!getDolGlobalString('SMSHUB_ENABLE_TICKET_ASSIGN')) return 0;
 				return $this->fireTicketTech($sender, $object, 'ticket_assigned_tech');
 
+			// Ticket reply / message sent: Dolibarr emits one of these depending on version.
+			case 'TICKET_SENDMESSAGE':
+			case 'TICKET_NEW_MESSAGE':
+			case 'TICKET_SENTBYMAIL':
+				if (!$this->mailCheckboxWantsSms()) return 0;
+				return $this->fireTicket($sender, $object, 'ticket_modified');
+
 			case 'PROPAL_VALIDATE':
 				if (!getDolGlobalString('SMSHUB_ENABLE_PROPAL_VALIDATE')) return 0;
 				return $this->firePropal($sender, $object, 'propal_validated');
 
 			case 'PROPAL_SENTBYMAIL':
-				if (!getDolGlobalString('SMSHUB_ENABLE_PROPAL_SENT')) return 0;
+				// Mail-form checkbox wins when present, otherwise fall back to the global setting.
+				$decision = $this->mailCheckboxDecision();
+				if ($decision === 'off') return 0;
+				if ($decision === 'unset' && !getDolGlobalString('SMSHUB_ENABLE_PROPAL_SENT')) return 0;
 				return $this->firePropal($sender, $object, 'propal_sent');
 
 			case 'PROPAL_CLOSE_SIGNED':
@@ -68,6 +83,23 @@ class InterfaceSmsHubTriggers extends DolibarrTriggers
 				return $this->firePropal($sender, $object, 'propal_refused');
 		}
 		return 0;
+	}
+
+	/**
+	 * Mail-form checkbox state, three-valued:
+	 *   'on'    → user ticked the box (force send)
+	 *   'off'   → user unticked it (force skip)
+	 *   'unset' → not posted by our form (e.g. API call) → defer to global setting
+	 */
+	protected function mailCheckboxDecision()
+	{
+		if (!isset($_POST['smshub_send_sms'])) return 'unset';
+		return ((string) $_POST['smshub_send_sms']) === '1' ? 'on' : 'off';
+	}
+
+	protected function mailCheckboxWantsSms()
+	{
+		return $this->mailCheckboxDecision() === 'on';
 	}
 
 	protected function firePropal($sender, $propal, $template_code)

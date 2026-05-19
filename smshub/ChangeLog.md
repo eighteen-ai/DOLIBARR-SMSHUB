@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.5 — 2026-05-19
+
+- **Case à cocher "Envoyer aussi un SMS au client" sur le formulaire d'envoi de mail** (cartes facture / devis / ticket). Affiche l'aperçu rendu du SMS (template `bill_validated` / `propal_sent` / `ticket_modified`), le numéro destinataire, et déclenche l'envoi automatiquement après l'envoi du mail. Cochage par défaut quand un numéro mobile est présent sur le client; désactivé sinon. Quand la case est explicitement décochée, elle prend le dessus sur les déclencheurs globaux (`SMSHUB_ENABLE_PROPAL_SENT`) pour éviter les doubles envois.
+- **Enregistrement comme opérateur SMS Dolibarr** : `module_parts['sms'] = 1`, et nouveau hook `sendsms` qui intercepte `CSMSFile::sendfile()` pour router les SMS Dolibarr standards (module Notifications, etc.) via SMSHUB. Activé par la nouvelle constante `SMSHUB_INTERCEPT_DOLIBARR_SMS` (setup, désactivée par défaut pour ne pas casser une config OVH/CMTelecom existante).
+- **Nouvelle variable `{document_link}`** pour les contextes `bill` et `propal` (lien public Dolibarr : page de paiement / page de signature). Nouvelle variable `{ticket_link}` pour le contexte `ticket` (interface publique de suivi). Apparaissent dans la légende de l'éditeur de modèles.
+- Modèles par défaut enrichis : utilisent `{client_firstname}` (au lieu de `{client_name}`), incluent `{payment_link}` (factures), `{signature_link}` (devis), `{ticket_link}` (tickets). Migration idempotente : les modèles encore au contenu d'usine sont mis à jour automatiquement à la réactivation; les modèles personnalisés sont préservés.
+
 ## 1.1.4 — 2026-05-14
 
 - Enriched variable dictionary for `bill`, `propal`, `ticket` contexts: `{client_firstname}`, `{client_lastname}`, `{client_civility}`, `{client_address}`, `{client_zip}`, `{client_town}`, `{client_country}`, `{client_email}`, `{client_phone}`. Values prefer the billing/customer contact on the document; fall back to the third-party fields. Best-effort firstname/lastname split when only `name` is available.

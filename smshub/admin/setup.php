@@ -41,6 +41,7 @@ $bool_constants = array(
 	'SMSHUB_ENABLE_PROPAL_SIGNED',
 	'SMSHUB_ENABLE_PROPAL_REFUSED',
 	'SMSHUB_BRIDGE_PUBLIC',
+	'SMSHUB_INTERCEPT_DOLIBARR_SMS',
 	'SMSHUB_DRYRUN',
 );
 
@@ -171,6 +172,7 @@ $triggers_labels = array(
 	'SMSHUB_ENABLE_PROPAL_SIGNED' => 'SMS à la signature d\'un devis',
 	'SMSHUB_ENABLE_PROPAL_REFUSED' => 'SMS au refus d\'un devis',
 	'SMSHUB_BRIDGE_PUBLIC' => 'Exposer le bridge SMS aux autres modules (RelanceAuto, etc.)',
+	'SMSHUB_INTERCEPT_DOLIBARR_SMS' => 'Intercepter tous les SMS Dolibarr (CSMSFile) et les router via SMSHUB',
 );
 foreach ($triggers_labels as $cst => $label) {
 	print '<tr class="oddeven"><td>'.$label.'</td><td>';

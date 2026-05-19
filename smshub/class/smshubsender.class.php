@@ -211,6 +211,10 @@ class SmsHubSender
 			$payment_link = getOnlinePaymentUrl(0, 'invoice', $facture->ref);
 		}
 
+		// Short-lived public document link (Dolibarr core helper). Falls back to the
+		// internal card URL when the public helper is unavailable.
+		$document_link = self::buildDocumentLink('invoice', $facture);
+
 		$contact = self::loadBillingContact($GLOBALS['db'], $facture, 'BILLING');
 		$base = self::buildThirdpartyVars($facture->thirdparty, $contact);
 		return array_merge($base, array(
@@ -221,6 +225,7 @@ class SmsHubSender
 			'due_date' => $due ? dol_print_date($due, 'day') : '',
 			'days_late' => $days_late,
 			'payment_link' => $payment_link,
+			'document_link' => $document_link,
 			'payment_methods_text' => self::paymentMethodsText(),
 			'date' => dol_print_date($today, 'day'),
 		));
@@ -251,6 +256,8 @@ class SmsHubSender
 		$today = dol_now();
 		$days_remaining = $valid_until ? max(0, (int) floor(($valid_until - $today) / 86400)) : 0;
 
+		$document_link = self::buildDocumentLink('propal', $propal);
+
 		$contact = self::loadBillingContact($GLOBALS['db'], $propal, 'CUSTOMER');
 		$base = self::buildThirdpartyVars($propal->thirdparty, $contact);
 		return array_merge($base, array(
@@ -261,6 +268,7 @@ class SmsHubSender
 			'valid_until' => $valid_until ? dol_print_date($valid_until, 'day') : '',
 			'days_remaining' => $days_remaining,
 			'signature_link' => $signature_link,
+			'document_link' => $document_link,
 			'payment_methods_text' => self::paymentMethodsText(),
 			'date' => dol_print_date($today, 'day'),
 		));
@@ -292,14 +300,60 @@ class SmsHubSender
 
 		$contact = self::loadBillingContact($GLOBALS['db'], $ticket, 'SUPPORTCLI');
 		$base = !empty($ticket->thirdparty) ? self::buildThirdpartyVars($ticket->thirdparty, $contact) : array();
+		$ticket_link = self::buildDocumentLink('ticket', $ticket);
 		return array_merge($base, array(
 			'company_name' => $mysoc->name ?? '',
 			'ticket_ref' => $ticket->ref,
 			'ticket_subject' => $ticket->subject ?? $ticket->track_id ?? '',
 			'ticket_status' => $status_label,
+			'ticket_link' => $ticket_link,
 			'technician' => $tech,
 			'date' => dol_print_date(dol_now(), 'day'),
 		));
+	}
+
+	/**
+	 * Build the public-facing URL for an object (invoice/propal/ticket).
+	 *
+	 * Strategy: prefer the public payment / signature / ticket-view pages exposed
+	 * by Dolibarr core because those work without a Dolibarr login. Falls back
+	 * to nothing when public pages are not configured.
+	 *
+	 * @param string $type 'invoice' | 'propal' | 'ticket'
+	 * @param object $obj
+	 * @return string
+	 */
+	public static function buildDocumentLink($type, $obj)
+	{
+		global $conf;
+		if (empty($obj->ref)) return '';
+
+		switch ($type) {
+			case 'invoice':
+				if (!empty($conf->global->ONLINE_PAYMENT_CREDITOR) && !empty($conf->global->PAYMENT_SECURITY_TOKEN)) {
+					require_once DOL_DOCUMENT_ROOT.'/core/lib/payments.lib.php';
+					return getOnlinePaymentUrl(0, 'invoice', $obj->ref);
+				}
+				return '';
+			case 'propal':
+				$f = DOL_DOCUMENT_ROOT.'/core/lib/signature.lib.php';
+				if (file_exists($f)) {
+					require_once $f;
+					if (function_exists('getOnlineSignatureUrl')) {
+						return getOnlineSignatureUrl(0, 'proposal', $obj->ref);
+					}
+				}
+				return '';
+			case 'ticket':
+				$track = $obj->track_id ?? '';
+				if (empty($track)) return '';
+				$base = !empty($conf->global->TICKET_URL_PUBLIC_INTERFACE)
+					? rtrim($conf->global->TICKET_URL_PUBLIC_INTERFACE, '/')
+					: (defined('DOL_MAIN_URL_ROOT') ? rtrim(DOL_MAIN_URL_ROOT, '/').'/public/ticket' : '');
+				if (empty($base)) return '';
+				return $base.'/view.php?track_id='.urlencode($track);
+		}
+		return '';
 	}
 
 	/**

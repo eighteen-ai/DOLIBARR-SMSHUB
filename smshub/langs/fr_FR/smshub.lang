@@ -68,6 +68,11 @@ SmsHubSourceRelance=Relance auto
 SmsHubSourceCron=Cron
 
 SmsHubCardSendSms=Envoyer un SMS au client
+SmsHubMailSendSmsLabel=📱 Envoyer aussi un SMS au client
+SmsHubMailSendSmsNoPhone=aucun numéro mobile sur la fiche client
+SmsHubInterceptDolibarrSms=Intercepter tous les SMS Dolibarr (CSMSFile) et les router via SMSHUB
+SmsHubVarDocumentLink=Lien public vers le document (paiement/signature Dolibarr)
+SmsHubVarTicketLink=Lien public vers le ticket
 
 SmsHubVarClientName=Nom du client
 SmsHubVarRef=Référence document

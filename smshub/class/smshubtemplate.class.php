@@ -158,6 +158,7 @@ class SmsHubTemplate
 					'due_date' => 'Date d\'échéance',
 					'days_late' => 'Jours de retard',
 					'payment_link' => 'Lien paiement en ligne (SumUp/Stripe/virement/chèque selon config Dolibarr)',
+					'document_link' => 'Lien public vers la facture (page de paiement Dolibarr)',
 					'payment_methods_text' => 'Liste textuelle des moyens de paiement (configurable)',
 				));
 			case 'ticket':
@@ -165,6 +166,7 @@ class SmsHubTemplate
 					'ticket_ref' => 'Référence ticket',
 					'ticket_subject' => 'Sujet ticket',
 					'ticket_status' => 'Statut ticket',
+					'ticket_link' => 'Lien public vers le ticket (interface publique Dolibarr)',
 					'technician' => 'Nom du technicien assigné',
 				));
 			case 'propal':
@@ -175,6 +177,7 @@ class SmsHubTemplate
 					'valid_until' => 'Date de fin de validité',
 					'days_remaining' => 'Jours restants avant expiration',
 					'signature_link' => 'Lien signature en ligne',
+					'document_link' => 'Lien public vers le devis (page de signature Dolibarr)',
 					'payment_methods_text' => 'Liste textuelle des moyens de paiement (configurable)',
 				));
 			case 'manual':
