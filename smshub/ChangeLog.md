@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.10 — 2026-05-19
+
+- Each successful SMS send (skipping dry-runs) now records a Dolibarr agenda event in `llx_actioncomm` with code `AC_BILL_SENTBYSMS` / `AC_PROPAL_SENTBYSMS` / `AC_TICKET_SENTBYSMS` (depending on source), `elementtype` matching the source, `fk_element` = the document id, `socid` = the thirdparty, label "SMS envoyé via SMSHUB — <ref>" and the message + destination + task_id in `note_private`. Mirrors the pattern used by `DOLIBARR-CHORUSPRO`.
+- Enables sibling modules like `DOLIBARR-FILTRABLENOTIFICATION` to surface SMS as a notification type (via `code LIKE '%SENTBYSMS'`) alongside email and Chorus depots.
+
 ## 1.1.9 — 2026-05-19
 
 - Fix: Dolibarr's SMS test page (Outils → SMS) errored out with `The SMS manager '1' defined into SMS setup MAIN_MODULE_SMSHUB_SMS is not found`. The `'sms' => 1` entry I added to `module_parts` in 1.1.5 was incorrect — Dolibarr interprets the value as the SMS manager class name. The supported way for third-party modules to integrate with Dolibarr's SMS layer is via the `sendsms` hook (which the module already provides through `SMSHUB_INTERCEPT_DOLIBARR_SMS`), not via `MAIN_MODULE_*_SMS`. Removed the broken module_parts entry, and `modSMSHub::init()` now deletes the stale `MAIN_MODULE_SMSHUB_SMS` constant on reactivation so existing installs are repaired.

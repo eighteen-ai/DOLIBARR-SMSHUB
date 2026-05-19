@@ -111,7 +111,51 @@ class SmsHubSender
 
 		$this->last_task_id = $task_id;
 		$log->updateStatus($scheduled_at ? SmsHubLog::STATUS_SCHEDULED : SmsHubLog::STATUS_SENT, $task_id);
+		$this->logActionComm($source, (int) $fk_source, $normalized, $message, $task_id, $user);
 		return true;
+	}
+
+	/**
+	 * Record a Dolibarr agenda event (llx_actioncomm) for the SMS we just sent,
+	 * so it appears in the object's history tab and so sibling modules like
+	 * DOLIBARR-FILTRABLENOTIFICATION can detect "last client notification" by
+	 * filtering on code LIKE '%SENTBYSMS'. Mirrors DOLIBARR-CHORUSPRO's pattern
+	 * (AC_BILL_SENTBYCHORUS).
+	 */
+	protected function logActionComm($source, $fk_source, $phone, $message, $task_id, $user)
+	{
+		// Only the object-bound sources produce an agenda entry. Manual sends to
+		// an arbitrary number, dolibarr-API interceptions, and cron heartbeats
+		// have no document to attach to.
+		$map = array(
+			'bill'   => array('code' => 'AC_BILL_SENTBYSMS',   'elementtype' => 'invoice', 'class' => 'Facture', 'path' => '/compta/facture/class/facture.class.php'),
+			'propal' => array('code' => 'AC_PROPAL_SENTBYSMS', 'elementtype' => 'propal',  'class' => 'Propal',  'path' => '/comm/propal/class/propal.class.php'),
+			'ticket' => array('code' => 'AC_TICKET_SENTBYSMS', 'elementtype' => 'ticket',  'class' => 'Ticket',  'path' => '/ticket/class/ticket.class.php'),
+		);
+		if (empty($map[$source]) || $fk_source <= 0) return;
+		$cfg = $map[$source];
+
+		require_once DOL_DOCUMENT_ROOT.$cfg['path'];
+		$cls = $cfg['class'];
+		$obj = new $cls($this->db);
+		if ($obj->fetch($fk_source) <= 0) return;
+		$socid = (int) ($obj->socid ?? ($obj->fk_soc ?? 0));
+
+		require_once DOL_DOCUMENT_ROOT.'/comm/action/class/actioncomm.class.php';
+		$ac = new ActionComm($this->db);
+		$ac->type_code = 'AC_OTH_AUTO';
+		$ac->code = $cfg['code'];
+		$ac->label = 'SMS envoyé via SMSHUB'.(!empty($obj->ref) ? ' — '.$obj->ref : '');
+		$ac->note_private = "Destinataire : ".$phone."\nTask SMSHUB : ".$task_id."\n\n".$message;
+		$ac->datep = dol_now();
+		$ac->datef = dol_now();
+		$ac->percentage = -1;
+		$ac->userownerid = (!empty($user) && !empty($user->id)) ? (int) $user->id : 0;
+		$ac->elementtype = $cfg['elementtype'];
+		$ac->fk_element = $fk_source;
+		$ac->socid = $socid;
+		// Best-effort: don't surface failures here — the SMS already went out.
+		@$ac->create($user);
 	}
 
 	/**
