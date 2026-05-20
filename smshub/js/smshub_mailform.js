@@ -2,33 +2,60 @@
  * Dolibarr's mail send form. Loaded on every page via module_parts['js'].
  * Version stamp logged to console so the loaded file is identifiable. */
 (function () {
-	var SMSHUB_JS_VERSION = '1.1.15';
-	if (typeof console !== 'undefined' && console.log) console.log('[SMSHUB] mailform JS', SMSHUB_JS_VERSION);
+	var SMSHUB_JS_VERSION = '1.1.16';
+	function log() {
+		if (typeof console !== 'undefined' && console.log) {
+			var args = ['[SMSHUB]'];
+			for (var i = 0; i < arguments.length; i++) args.push(arguments[i]);
+			console.log.apply(console, args);
+		}
+	}
+	log('mailform JS', SMSHUB_JS_VERSION);
 
 	if (typeof jQuery === 'undefined') return;
 
 	jQuery(function ($) {
 		var qs = window.location.search || '';
-		if (qs.indexOf('action=presend') === -1) return;
-
 		var path = window.location.pathname || '';
+
+		// Detect object type from URL path. Patterns covered:
+		//   /(htdocs/)?compta/facture/card.php
+		//   /(htdocs/)?comm/propal/card.php
+		//   /(htdocs/)?ticket/card.php
 		var type = null;
 		var idParam = null;
-		if (path.indexOf('/compta/facture/card.php') !== -1) { type = 'bill'; idParam = 'facid'; }
-		else if (path.indexOf('/comm/propal/card.php') !== -1) { type = 'propal'; idParam = 'id'; }
-		else if (path.indexOf('/ticket/card.php') !== -1) { type = 'ticket'; idParam = 'id'; }
+		if (/\/compta\/facture\/card\.php/.test(path)) { type = 'bill'; idParam = 'facid'; }
+		else if (/\/comm\/propal\/card\.php/.test(path)) { type = 'propal'; idParam = 'id'; }
+		else if (/\/ticket\/card\.php/.test(path)) { type = 'ticket'; idParam = 'id'; }
 		else return;
 
+		// Look for ANY Dolibarr mail form on the page — don't gate on action=presend,
+		// because ticket pages use action=presend_addmessage or similar variants and
+		// the form-id/name remains stable across them.
 		var form = $('#mailform, form[name="mailform"]').first();
-		if (!form.length) return;
+		if (!form.length) {
+			log('type=' + type + ' but no #mailform on page (path=' + path + ', qs=' + qs + ')');
+			return;
+		}
 		if (form.find('.smshub_send_sms_row').length) return;
+		log('injecting SMS row for type=' + type);
 
 		function getParam(name) {
 			var m = qs.match(new RegExp('[?&]' + name + '=([^&]+)'));
 			return m ? decodeURIComponent(m[1]) : '';
 		}
-		var objId = getParam(idParam) || form.find('input[name="' + idParam + '"]').val() || form.find('input[name="id"]').val() || '';
-		if (!objId) return;
+		// Try URL param, then hidden input named idParam, then any hidden input named "id",
+		// then "track_id" (tickets often link via track_id rather than rowid).
+		var objId = getParam(idParam)
+			|| form.find('input[name="' + idParam + '"]').val()
+			|| form.find('input[name="id"]').val()
+			|| getParam('id')
+			|| getParam('track_id')
+			|| '';
+		if (!objId) {
+			log('no object id resolvable for type=' + type + ' (url=' + path + qs + ')');
+			return;
+		}
 
 		// Textarea is always rendered (not hidden) so an out-of-date cached JS is
 		// obvious vs. the new editable layout. Starts pre-populated with a hint;

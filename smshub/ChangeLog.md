@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.16 — 2026-05-20
+
+- Fix: on ticket cards the SMS row was not injected at all (not just unchecked as previously thought). Dropped the URL-level `action=presend` gate that filtered out ticket variants like `action=presend_addmessage`. Detection now relies solely on the presence of `#mailform` on the page combined with the card-path match (`/ticket/card.php`).
+- Added structured `[SMSHUB]` console log lines at every decision point (script load, no-form, no-id, injection) so it's straightforward to diagnose why the row would be missing on a given page. Look in the browser console (F12).
+- Object id resolution falls back to `track_id` for tickets when neither `id` nor `facid` is present in the URL/form.
+
 ## 1.1.15 — 2026-05-20
 
 - Fix: on ticket cards, the SMS row's destination phone was empty and the checkbox never pre-checked. The AJAX endpoint's manual `!empty($o->fk_soc)` check failed when Dolibarr's Ticket class exposed the third-party id via `socid` instead. Switched to `fetch_thirdparty()` (CommonObject standard) for consistency with facture/propal. Added a fallback that uses the SUPPORTCLI contact's mobile/pro/personal phone when the thirdparty itself has no phone — often more relevant on support tickets.
