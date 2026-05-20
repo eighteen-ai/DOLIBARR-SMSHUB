@@ -2,7 +2,7 @@
  * Dolibarr's mail send form. Loaded on every page via module_parts['js'].
  * Version stamp logged to console so the loaded file is identifiable. */
 (function () {
-	var SMSHUB_JS_VERSION = '1.1.16';
+	var SMSHUB_JS_VERSION = '1.1.17';
 	function log() {
 		if (typeof console !== 'undefined' && console.log) {
 			var args = ['[SMSHUB]'];
@@ -29,29 +29,37 @@
 		else if (/\/ticket\/card\.php/.test(path)) { type = 'ticket'; idParam = 'id'; }
 		else return;
 
-		// Look for ANY Dolibarr mail form on the page — don't gate on action=presend,
-		// because ticket pages use action=presend_addmessage or similar variants and
-		// the form-id/name remains stable across them.
-		var form = $('#mailform, form[name="mailform"]').first();
+		// Ticket pages use form#ticket (not #mailform) — different markup altogether.
+		var formSelector = (type === 'ticket') ? '#ticket, form[name="ticket"]' : '#mailform, form[name="mailform"]';
+		var form = $(formSelector).first();
 		if (!form.length) {
-			log('type=' + type + ' but no #mailform on page (path=' + path + ', qs=' + qs + ')');
+			log('type=' + type + ' but no form (' + formSelector + ') on page');
 			return;
 		}
 		if (form.find('.smshub_send_sms_row').length) return;
-		log('injecting SMS row for type=' + type);
+		log('injecting SMS row for type=' + type + ' (form=' + (form.attr('id') || form.attr('name')) + ')');
 
 		function getParam(name) {
 			var m = qs.match(new RegExp('[?&]' + name + '=([^&]+)'));
 			return m ? decodeURIComponent(m[1]) : '';
 		}
-		// Try URL param, then hidden input named idParam, then any hidden input named "id",
-		// then "track_id" (tickets often link via track_id rather than rowid).
-		var objId = getParam(idParam)
-			|| form.find('input[name="' + idParam + '"]').val()
-			|| form.find('input[name="id"]').val()
-			|| getParam('id')
-			|| getParam('track_id')
-			|| '';
+		// For tickets, the form has no `id` input and the URL only carries `track_id`
+		// (a string, not the rowid). We pass it to the AJAX endpoint as-is and the
+		// server side fetches by track_id. For other types we resolve the rowid as
+		// before (URL param → hidden input → fallback).
+		var objId = '';
+		var idKey = 'id';
+		if (type === 'ticket') {
+			objId = getParam('track_id') || form.find('input[name="track_id"]').val() || '';
+			idKey = 'track_id';
+		}
+		if (!objId) {
+			objId = getParam(idParam)
+				|| form.find('input[name="' + idParam + '"]').val()
+				|| form.find('input[name="id"]').val()
+				|| getParam('id')
+				|| '';
+		}
 		if (!objId) {
 			log('no object id resolvable for type=' + type + ' (url=' + path + qs + ')');
 			return;
@@ -116,10 +124,11 @@
 		textarea.on('input', function () { updateCount(); autoResize(); });
 
 		var docroot = (typeof window.DOL_URL_ROOT !== 'undefined') ? window.DOL_URL_ROOT : '/htdocs';
-		var ajaxUrl = docroot + '/custom/smshub/ajax/mailform_data.php?type=' + encodeURIComponent(type) + '&id=' + encodeURIComponent(objId);
+		var ajaxQuery = '?type=' + encodeURIComponent(type) + '&' + idKey + '=' + encodeURIComponent(objId);
+		var ajaxUrl = docroot + '/custom/smshub/ajax/mailform_data.php' + ajaxQuery;
 		$.ajax({ url: ajaxUrl, dataType: 'json' })
 			.fail(function () {
-				return $.ajax({ url: '/custom/smshub/ajax/mailform_data.php?type=' + encodeURIComponent(type) + '&id=' + encodeURIComponent(objId), dataType: 'json' });
+				return $.ajax({ url: '/custom/smshub/ajax/mailform_data.php' + ajaxQuery, dataType: 'json' });
 			})
 			.done(function (data) {
 				if (!data || data.ok !== true) {

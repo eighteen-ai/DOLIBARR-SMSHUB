@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.17 — 2026-05-20
+
+- Fix: the SMS row was never injected on ticket cards because the ticket "Add or send a message" form has completely different markup from the standard FormMail:
+  - Form id/name is `ticket` (not `mailform`).
+  - No `id` input is exposed; only `track_id` (URL) and `trackid` (form, value `tic<rowid>`) are present.
+  - Submit action is `add_message` (button `btn_add_message`), URL action is `presend_addmessage`.
+- The JS now selects `#ticket, form[name="ticket"]` when type=ticket, resolves the object identifier from `track_id` instead of the rowid, and sends it to the AJAX endpoint as `&track_id=...` (vs `&id=...` for facture/propal). The AJAX endpoint dispatches `Ticket->fetch(0, '', $track_id)` when a track_id is provided.
+
 ## 1.1.16 — 2026-05-20
 
 - Fix: on ticket cards the SMS row was not injected at all (not just unchecked as previously thought). Dropped the URL-level `action=presend` gate that filtered out ticket variants like `action=presend_addmessage`. Detection now relies solely on the presence of `#mailform` on the page combined with the card-path match (`/ticket/card.php`).

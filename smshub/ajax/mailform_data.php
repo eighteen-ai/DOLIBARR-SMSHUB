@@ -39,9 +39,21 @@ SmsHubTemplate::seedDefaults($db, $user);
 
 $type = GETPOST('type', 'aZ09');
 $id = (int) GETPOST('id', 'int');
-if (empty($id) || !in_array($type, array('bill', 'propal', 'ticket'), true)) {
-	echo json_encode(array('ok' => false, 'error' => 'paramètres invalides'));
+$track_id = GETPOST('track_id', 'alphanohtml');
+if (!in_array($type, array('bill', 'propal', 'ticket'), true)) {
+	echo json_encode(array('ok' => false, 'error' => 'type invalide'));
 	exit;
+}
+if ($type === 'ticket') {
+	if (empty($id) && empty($track_id)) {
+		echo json_encode(array('ok' => false, 'error' => 'id ou track_id manquant'));
+		exit;
+	}
+} else {
+	if (empty($id)) {
+		echo json_encode(array('ok' => false, 'error' => 'id manquant'));
+		exit;
+	}
 }
 
 $phone = '';
@@ -70,7 +82,16 @@ switch ($type) {
 	case 'ticket':
 		require_once DOL_DOCUMENT_ROOT.'/ticket/class/ticket.class.php';
 		$o = new Ticket($db);
-		if ($o->fetch($id) <= 0) { echo json_encode(array('ok' => false, 'error' => 'ticket introuvable')); exit; }
+		// Ticket->fetch signature is fetch($id='', $ref='', $track_id=''). Tickets
+		// are usually opened via their string track_id (not the rowid), so we
+		// dispatch to whichever was passed by the caller.
+		$fetched = false;
+		if (!empty($track_id)) {
+			$fetched = ($o->fetch(0, '', $track_id) > 0);
+		} elseif ($id > 0) {
+			$fetched = ($o->fetch($id) > 0);
+		}
+		if (!$fetched) { echo json_encode(array('ok' => false, 'error' => 'ticket introuvable')); exit; }
 		// fetch_thirdparty (CommonObject) handles both fk_soc and socid property
 		// names depending on Dolibarr version — more reliable than a manual check.
 		if (method_exists($o, 'fetch_thirdparty')) $o->fetch_thirdparty();
