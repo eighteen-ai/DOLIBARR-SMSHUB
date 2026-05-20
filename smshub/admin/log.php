@@ -65,8 +65,10 @@ foreach ($rows as $r) {
 	print '<td style="color:'.$status_color.'"><strong>'.dol_escape_htmltag($r->status).'</strong></td>';
 	print '<td>'.($r->task_id ? '#'.(int) $r->task_id : '').'</td>';
 	print '<td>'.($r->scheduled_at ? dol_escape_htmltag($r->scheduled_at) : '').'</td>';
-	print '<td title="'.dol_escape_htmltag($r->message).'">'.dol_escape_htmltag(dol_substr($r->message, 0, 80)).'</td>';
-	print '<td style="color:red">'.dol_escape_htmltag(dol_substr($r->error_message ?? '', 0, 60)).'</td>';
+	// Full message displayed (no truncation) inside a fixed-width wrapper so the
+	// cell stays readable in mixed-length tables. Storage is TEXT, no length cap.
+	print '<td><div style="max-width:480px;white-space:pre-wrap;font-size:11.5px;line-height:1.35;color:#333">'.dol_escape_htmltag($r->message).'</div></td>';
+	print '<td><div style="max-width:280px;white-space:pre-wrap;font-size:11.5px;color:#c0392b">'.dol_escape_htmltag($r->error_message ?? '').'</div></td>';
 	print '</tr>';
 }
 print '</table>';

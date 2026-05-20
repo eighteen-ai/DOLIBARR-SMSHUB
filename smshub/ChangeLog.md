@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.14 — 2026-05-20
+
+- Log viewer (`admin/log.php`) was visually truncating the message column to 80 chars (full text only available in the cell `title` tooltip). Now the full message is rendered with `white-space:pre-wrap` inside a 480px-max wrapper so long multi-segment SMS are entirely readable. Same treatment for the error column (280px wrapper). Storage was — and is — `TEXT`, no length cap; only the display was the issue.
+
 ## 1.1.13 — 2026-05-20
 
 - Mail-form SMS textarea now auto-resizes to fit its content (initial fill + every keystroke). Long SMS look truncated otherwise because the visible portion was capped to `rows=5` while the rest scrolled out of view — there was never any actual cap. SMSHUB sends long SMS as multi-segment messages, no length limit imposed by this module.
