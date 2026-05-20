@@ -2,7 +2,7 @@
  * Dolibarr's mail send form. Loaded on every page via module_parts['js'].
  * Version stamp logged to console so the loaded file is identifiable. */
 (function () {
-	var SMSHUB_JS_VERSION = '1.1.12';
+	var SMSHUB_JS_VERSION = '1.1.13';
 	if (typeof console !== 'undefined' && console.log) console.log('[SMSHUB] mailform JS', SMSHUB_JS_VERSION);
 
 	if (typeof jQuery === 'undefined') return;
@@ -43,7 +43,7 @@
 					'<input type="text" class="smshub_send_sms_phone_input" name="smshub_send_sms_phone" placeholder="+33600000000" style="width:180px" autocomplete="off">' +
 					' <span class="smshub_send_sms_meta" style="margin-left:8px;color:#666;font-size:12px">…chargement…</span>' +
 					'<br>' +
-					'<textarea class="smshub_send_sms_textarea" name="smshub_send_sms_message" rows="5" style="width:95%;margin-top:6px;font-family:Menlo,Consolas,monospace;font-size:12px;background:#fafafa;border:1px solid #c0c0c0;border-radius:4px;padding:8px;color:#222;box-sizing:border-box" placeholder="Texte du SMS — modifiable avant envoi (chargement en cours…)"></textarea>' +
+					'<textarea class="smshub_send_sms_textarea" name="smshub_send_sms_message" rows="3" style="width:95%;margin-top:6px;font-family:Menlo,Consolas,monospace;font-size:12px;background:#fafafa;border:1px solid #c0c0c0;border-radius:4px;padding:8px;color:#222;box-sizing:border-box;overflow:hidden;resize:vertical" placeholder="Texte du SMS — modifiable avant envoi (chargement en cours…)"></textarea>' +
 					'<div class="smshub_send_sms_count" style="font-size:11px;color:#888;text-align:right;margin-top:2px">—</div>' +
 				'</td>' +
 			'</tr>';
@@ -60,16 +60,27 @@
 		var textarea = row.find('.smshub_send_sms_textarea');
 		var counter = row.find('.smshub_send_sms_count');
 
+		// Counter shows length + estimated segment count. SMSHUB sends long SMS
+		// as multi-segment messages with no cap on length — the counter is purely
+		// informative (operator billing is per segment).
 		function updateCount() {
 			var v = textarea.val() || '';
 			var len = v.length;
 			var unicode = /[^\x00-\x7F]/.test(v);
 			var segmentSize = unicode ? 70 : 160;
 			var segments = len === 0 ? 0 : Math.ceil(len / segmentSize);
-			counter.text(len + ' caractère' + (len > 1 ? 's' : '') +
-				(segments > 0 ? ' · ' + segments + ' SMS (' + segmentSize + ' / segment' + (unicode ? ', mode Unicode' : '') + ')' : ''));
+			var seg = segments > 0
+				? ' · ' + segments + ' segment' + (segments > 1 ? 's' : '') + ' SMS' + (unicode ? ' (Unicode)' : '')
+				: '';
+			counter.text(len + ' caractère' + (len > 1 ? 's' : '') + seg);
 		}
-		textarea.on('input', updateCount);
+		// Auto-resize to fit the content — long SMS aren't capped, only scrolled
+		// otherwise, which made users think the text was truncated.
+		function autoResize() {
+			textarea[0].style.height = 'auto';
+			textarea[0].style.height = (textarea[0].scrollHeight + 4) + 'px';
+		}
+		textarea.on('input', function () { updateCount(); autoResize(); });
 
 		var docroot = (typeof window.DOL_URL_ROOT !== 'undefined') ? window.DOL_URL_ROOT : '/htdocs';
 		var ajaxUrl = docroot + '/custom/smshub/ajax/mailform_data.php?type=' + encodeURIComponent(type) + '&id=' + encodeURIComponent(objId);
@@ -95,6 +106,7 @@
 					textarea.attr('placeholder', 'Aucun modèle SMS — tapez le message à envoyer ici');
 				}
 				updateCount();
+				autoResize();
 			});
 	});
 })();

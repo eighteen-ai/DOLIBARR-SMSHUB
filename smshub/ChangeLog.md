@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.13 — 2026-05-20
+
+- Mail-form SMS textarea now auto-resizes to fit its content (initial fill + every keystroke). Long SMS look truncated otherwise because the visible portion was capped to `rows=5` while the rest scrolled out of view — there was never any actual cap. SMSHUB sends long SMS as multi-segment messages, no length limit imposed by this module.
+- Counter wording clarified: `X caractères · Y segments SMS (Unicode)` instead of `X caractères · Y SMS (160 / segment)` which could be misread as a per-message limit.
+
 ## 1.1.12 — 2026-05-19
 
 - Mail-form row : the editable textarea introduced in 1.1.11 was hidden by default and made visible by jQuery only when the AJAX preview arrived. On installs where the cached JS was still v1.1.10 the user saw the old read-only div instead. Now the textarea is rendered visible from the start (jQuery just fills it once the AJAX returns), so an out-of-date cached JS is immediately distinguishable from the new layout. Added a `[SMSHUB] mailform JS 1.1.12` console.log + a small `vN` version tag next to the label so users can confirm which version is loaded.
