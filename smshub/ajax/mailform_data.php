@@ -71,13 +71,24 @@ switch ($type) {
 		require_once DOL_DOCUMENT_ROOT.'/ticket/class/ticket.class.php';
 		$o = new Ticket($db);
 		if ($o->fetch($id) <= 0) { echo json_encode(array('ok' => false, 'error' => 'ticket introuvable')); exit; }
-		if (empty($o->thirdparty) && !empty($o->fk_soc)) {
-			require_once DOL_DOCUMENT_ROOT.'/societe/class/societe.class.php';
-			$soc = new Societe($db);
-			$soc->fetch($o->fk_soc);
-			$o->thirdparty = $soc;
-		}
+		// fetch_thirdparty (CommonObject) handles both fk_soc and socid property
+		// names depending on Dolibarr version — more reliable than a manual check.
+		if (method_exists($o, 'fetch_thirdparty')) $o->fetch_thirdparty();
 		$phone = SmsHubSender::thirdpartyPhone($o->thirdparty);
+		// Fallback: if the thirdparty has no phone, try the SUPPORTCLI contact
+		// attached to the ticket (often more relevant than the company's main line).
+		if (empty($phone) && method_exists($o, 'getIdContact')) {
+			$cids = $o->getIdContact('external', 'SUPPORTCLI');
+			if (!empty($cids)) {
+				require_once DOL_DOCUMENT_ROOT.'/contact/class/contact.class.php';
+				$c = new Contact($db);
+				if ($c->fetch((int) $cids[0]) > 0) {
+					foreach (array('phone_mobile', 'phone_pro', 'phone_perso') as $f) {
+						if (!empty($c->$f)) { $phone = $c->$f; break; }
+					}
+				}
+			}
+		}
 		$template_code = 'ticket_modified';
 		$vars = SmsHubSender::buildTicketVars($o);
 		break;

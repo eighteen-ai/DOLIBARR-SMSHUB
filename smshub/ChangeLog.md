@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.15 — 2026-05-20
+
+- Fix: on ticket cards, the SMS row's destination phone was empty and the checkbox never pre-checked. The AJAX endpoint's manual `!empty($o->fk_soc)` check failed when Dolibarr's Ticket class exposed the third-party id via `socid` instead. Switched to `fetch_thirdparty()` (CommonObject standard) for consistency with facture/propal. Added a fallback that uses the SUPPORTCLI contact's mobile/pro/personal phone when the thirdparty itself has no phone — often more relevant on support tickets.
+- JS: auto-checks the SMS box when the user types a phone manually (and unchecks it when the field is cleared) so the case where the thirdparty has no phone is still usable in one click.
+
 ## 1.1.14 — 2026-05-20
 
 - Log viewer (`admin/log.php`) was visually truncating the message column to 80 chars (full text only available in the cell `title` tooltip). Now the full message is rendered with `white-space:pre-wrap` inside a 480px-max wrapper so long multi-segment SMS are entirely readable. Same treatment for the error column (280px wrapper). Storage was — and is — `TEXT`, no length cap; only the display was the issue.

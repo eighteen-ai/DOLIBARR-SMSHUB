@@ -2,7 +2,7 @@
  * Dolibarr's mail send form. Loaded on every page via module_parts['js'].
  * Version stamp logged to console so the loaded file is identifiable. */
 (function () {
-	var SMSHUB_JS_VERSION = '1.1.13';
+	var SMSHUB_JS_VERSION = '1.1.15';
 	if (typeof console !== 'undefined' && console.log) console.log('[SMSHUB] mailform JS', SMSHUB_JS_VERSION);
 
 	if (typeof jQuery === 'undefined') return;
@@ -59,6 +59,12 @@
 		var meta = row.find('.smshub_send_sms_meta');
 		var textarea = row.find('.smshub_send_sms_textarea');
 		var counter = row.find('.smshub_send_sms_count');
+
+		// When the user manually types a phone number, auto-check the box so they
+		// don't have to think about it. Empty input → uncheck.
+		phoneInput.on('input', function () {
+			cb.prop('checked', (phoneInput.val() || '').trim() !== '');
+		});
 
 		// Counter shows length + estimated segment count. SMSHUB sends long SMS
 		// as multi-segment messages with no cap on length — the counter is purely
